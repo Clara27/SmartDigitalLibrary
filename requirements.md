@@ -32,7 +32,7 @@ uuid>=1.30
 pydub>=0.25.1
 gtts>=2.3.0
 psutil>=5.9.0
-ffmpeg-python=0.2.0
+ffmpeg-python
 
 
 # Vector Operations (used by TruLens)

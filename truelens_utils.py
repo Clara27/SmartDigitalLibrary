@@ -8,7 +8,6 @@ import pandas as pd
 import plotly.graph_objects as go 
 import json
 import numpy as np
-from langchain_utils import SnowflakeCortexLLM
 from back import SnowparkManager
 import traceback
 from trulens.apps.custom import instrument

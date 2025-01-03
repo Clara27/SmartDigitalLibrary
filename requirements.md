@@ -4,16 +4,16 @@ streamlit
 # Snowflake Dependencies
 snowflake-snowpark-python
 snowflake-connector-python
-snowflake.core==1.0.2
+snowflake.core
 
 # Document Processing
 PyPDF2
 python-docx
 
 # Data Processing and Visualization
-pandas==2.2.3
+pandas
 plotly
-numpy==1.26.4
+numpy
 
 # TruLens and Evaluation
 trulens_eval
@@ -23,12 +23,12 @@ trulens.connectors.snowflake
 trulens.providers.cortex
 
 # API Interaction
-requests>=2.31.0
+requests
 
 # System Utilities
-python-uuid>=1.30
-psutil>=5.9.0
-uuid>=1.30
+python-uuid
+psutil
+uuid
 
 # Audio Processing
 pydub
@@ -38,8 +38,8 @@ ffmpeg-python
 
 
 # Vector Operations (used by TruLens)
-scikit-learn==1.5.2
-scipy==1.14.1
+scikit-learn
+scipy
 
 # Note: This project requires Python 3.11
 

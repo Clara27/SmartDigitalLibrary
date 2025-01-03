@@ -34,7 +34,6 @@ import logging
 import threading
 import subprocess
 import re
-from trulens_eval.tru_chain import TruChain
 from io import StringIO
 import contextlib
 import sys

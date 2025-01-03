@@ -26,7 +26,6 @@ trulens.providers.cortex
 requests
 
 # System Utilities
-python-uuid
 psutil
 uuid
 

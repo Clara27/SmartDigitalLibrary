@@ -446,10 +446,10 @@ class TruLensEvaluator:
             with self.tru_rag as recording:  
                 print("Inside tru_rag context")
                 resp = self.rag.process_query(query)
-                #print(f"Got response: {resp[:100]}...")
+                print(f"Got response: {resp[:100]}...")
                 
                               
-            # print("Capturing dashboard output")
+             print("Capturing dashboard output")
             # sys.stdout = StringIO()
             
             tru.run_dashboard()
@@ -464,8 +464,8 @@ class TruLensEvaluator:
             # st.write(f"Extracted URL: {dashboard_url}")
             
             return {
-                'response': resp,
-                'dashboard_url': dashboard_url
+                'response': resp
+                #'dashboard_url': dashboard_url
             }
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")
@@ -503,10 +503,10 @@ class TruLensEvaluator:
             with self.tru_rag as recording:  
                 print("Inside tru_rag context")
                 resp = self.rag.process_query(query)
-                #print(f"Got response: {resp[:100]}...")
+                print(f"Got response: {resp[:100]}...")
                 
                               
-            # print("Capturing dashboard output")
+            print("Capturing dashboard output")
             # sys.stdout = StringIO()
             
             tru.run_dashboard()
@@ -519,7 +519,7 @@ class TruLensEvaluator:
             # dashboard_url = network_url.group(1) if network_url else None
             # st.session_state.dashboard_url = dashboard_url
             # print(f"Extracted URL: {dashboard_url}")
-            
+            dashboard_rul = "10.0.0.1/8501"
             return {
                 'response': resp,
                 'dashboard_url': dashboard_url

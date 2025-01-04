@@ -227,47 +227,47 @@ class TruLensEvaluator:
 
                 
                 # Initialize Cortex with the native connection
-                self.provider = Cortex(
+               self.provider = Cortex(
                     snowflake_conn=snowflake_conn,
                     model="mistral-large2"
                  )
-                print("✓ Cortex provider initialized")
+               print("✓ Cortex provider initialized")
 
                 # Initialize feedback functions
-                print("Setting up feedback functions...")
-                self.rag = RAGPipeline() 
-                self.retriever = CortexSearchRetriever(session, limit_to_retrieve=4)
+               print("Setting up feedback functions...")
+               self.rag = RAGPipeline() 
+               self.retriever = CortexSearchRetriever(session, limit_to_retrieve=4)
                 #self.get_document_summary = self.rag.get_document_summary
 
 
-                self.f_answer_relevance = (
+               self.f_answer_relevance = (
                     Feedback(self.provider.relevance_with_cot_reasons, name="Answer Relevance")
                     .on_input()
                     .on_output()
                 )
-                self.f_context_relevance = (
+               self.f_context_relevance = (
                     Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
                     .on_input()
                     .on(Select.RecordCalls.retrieve_context.rets[:])
                     .aggregate(np.mean)
                 )
-                self.f_groundedness = (
+               self.f_groundedness = (
                     Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
                     .on(Select.RecordCalls.retrieve_context.rets.collect())
                     .on_output()
                 )
                 
                 
-                self.f_controversiality = (
+               self.f_controversiality = (
                     Feedback(self.provider.controversiality_with_cot_reasons,name="Controversiality")
                     .on_output()
                 )
-                self.f_insensitivity = (
+               self.f_insensitivity = (
                     Feedback(self.provider.insensitivity_with_cot_reasons,name="Insensitivity")
                     .on_output()
                 )
   
-                self.f_coherence = (
+               self.f_coherence = (
                     Feedback(self.provider.coherence_with_cot_reasons, name="Coherence")
                     .on_output()
                 )
@@ -275,7 +275,7 @@ class TruLensEvaluator:
                
 
                     
-                self.all_feedbacks = [           
+               self.all_feedbacks = [           
                     self.f_answer_relevance,
                     self.f_context_relevance,
                     self.f_groundedness,
@@ -287,8 +287,8 @@ class TruLensEvaluator:
                 
                 
                 
-                self.initialized = True
-                print("✓ TruLens evaluator fully initialized")
+               self.initialized = True
+               print("✓ TruLens evaluator fully initialized")
 
             except Exception as e:
                 print(f"ERROR during Cortex initialization: {str(e)}")

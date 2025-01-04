@@ -223,14 +223,14 @@ class TruLensEvaluator:
                # Create a Snowflake connection using the connection parameters
                provider = Cortex(snowflake.connector.connect(
                    **connection_parameters
-               ))
+                  ))
 
                 
                 # Initialize Cortex with the native connection
                 self.provider = Cortex(
                     snowflake_conn=snowflake_conn,
                     model="mistral-large2"
-                )
+                 )
                 print("✓ Cortex provider initialized")
 
                 # Initialize feedback functions

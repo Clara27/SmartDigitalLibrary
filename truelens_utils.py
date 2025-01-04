@@ -217,17 +217,17 @@ class TruLensEvaluator:
                    "warehouse": st.secrets["snowflake_warehouse"]
                }
                
-               from trulens.providers.cortex.provider import Cortex
+
                
                # Create a Snowflake connection using the connection parameters
-               snowflake_conn = snowflake.connector.connect( **connection_parameters )
-
-                
-                # Initialize Cortex with the native connection
+               # Initialize Cortex with the Snowflake connection and model engine
                self.provider = Cortex(
-                    snowflake_conn=snowflake_conn,
-                    model="mistral-large2"
-                 )
+                   snowflake_conn=snowflake.connector.connect(
+                       **connection_parameters
+                   ),
+                   model_engine="mistral_large2"  # Correctly specifying the model engine
+               )
+
                print("✓ Cortex provider initialized")
 
                 # Initialize feedback functions

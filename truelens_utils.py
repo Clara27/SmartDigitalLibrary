@@ -211,7 +211,7 @@ class TruLensEvaluator:
                    "account": st.secrets["snowflake_account"],
                    "user": st.secrets["snowflake_user"],
                    "password": st.secrets["snowflake_password"],
-                   "role": st.secrets["snowflake_role"] 
+                   "role": st.secrets["snowflake_role"], 
                    "database": st.secrets["snowflake_database"],
                    "schema": st.secrets["snowflake_schema"],
                    "warehouse": st.secrets["snowflake_warehouse"]

@@ -449,7 +449,7 @@ class TruLensEvaluator:
                 print(f"Got response: {resp[:100]}...")
                 
                               
-             print("Capturing dashboard output")
+            print("Capturing dashboard output")
             # sys.stdout = StringIO()
             
             tru.run_dashboard()

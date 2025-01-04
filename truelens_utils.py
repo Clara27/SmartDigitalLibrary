@@ -245,7 +245,7 @@ class TruLensEvaluator:
                self.f_context_relevance = (
                     Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
                     .on_input()
-                    .on(Select.RecordCalls.retrieve_context.rets[:])
+                    .on(Select.RecordCalls.retrieve_context.rets)
                     .aggregate(np.mean)
                 )
                self.f_groundedness = (
@@ -479,7 +479,7 @@ class TruLensEvaluator:
     def evaluate_rag_pipeline(self, query: str, filename, operation_type: str, **kwargs):
         if not self.initialized:
             return None
-        stdout_backup = sys.stdout
+        #stdout_backup = sys.stdout
         try:
             print("Starting evaluate_rag_pipeline")
             self.rag = RAGPipeline()

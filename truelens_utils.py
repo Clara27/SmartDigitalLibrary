@@ -220,9 +220,7 @@ class TruLensEvaluator:
                from trulens.providers.cortex.provider import Cortex
                
                # Create a Snowflake connection using the connection parameters
-               provider = Cortex(snowflake.connector.connect(
-                   **connection_parameters
-                  ))
+               snowflake_conn = snowflake.connector.connect( **connection_parameters )
 
                 
                 # Initialize Cortex with the native connection

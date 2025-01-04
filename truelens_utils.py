@@ -225,7 +225,7 @@ class TruLensEvaluator:
                # Initialize Cortex with the Snowflake connection and model engine
                self.provider = Cortex(
                    snowflake_conn=snowflake_conn,
-                   model_engine="mistral_large2"
+                   model_engine="mistral-large2"
                )
 
                print("✓ Cortex provider initialized")

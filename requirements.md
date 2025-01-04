@@ -1,46 +1,48 @@
-# Core Web Framework
-streamlit
+# Core dependencies
+streamlit>=1.29.0
+snowflake-snowpark-python>=1.12.0
+snowflake-connector-python>=3.6.0
 
-# Snowflake Dependencies
-snowflake-snowpark-python
-snowflake-connector-python
-snowflake.core
+# PDF Processing
+PyPDF2>=3.0.0
+python-docx>=0.8.11
 
-# Document Processing
-PyPDF2
-python-docx
-
-# Data Processing and Visualization
-pandas
+# Data processing and analysis
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.2.0
 plotly
-numpy
 
-# TruLens and Evaluation
-trulens_eval
-trulens-core
-trulens-feedback
-trulens.connectors.snowflake
-trulens.providers.cortex
+# RAG and LLM evaluation
+langchain>=0.0.329
+openai>=1.3.0
 
-# API Interaction
-requests
+# TruLens and dependencies
+trulens-eval>=1.2.8
+trulens-core>=1.2.8
+trulens-feedback>=1.2.8
+trulens.connectors.snowflake>=1.2.8
+trulens.providers.cortex>=1.2.8
 
-# System Utilities
-psutil
-uuid
-
-# Audio Processing
-pydub
-gtts
-psutil
-ffmpeg-python
+pydantic>=2.0.0,<3.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.2.0
 
 
-# Vector Operations (used by TruLens)
-scikit-learn
-scipy
+# Audio processing
+gtts>=2.3.0
+pydub>=0.25.1
 
-# Note: This project requires Python 3.11
+# System monitoring
+psutil>=5.9.0
 
-# If audio processing fails in production, run:
-# sudo apt-get update && sudo apt-get install -y ffmpeg
+# API and requests
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Utilities
+uuid>=1.30
+python-json-logger>=2.0.7
+ffmpeg-python>=0.2.0
+

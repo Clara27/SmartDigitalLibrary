@@ -29,7 +29,7 @@ from trulens_eval.feedback.provider import OpenAI
 from trulens.core.guardrails.base import context_filter
 from trulens.providers.cortex import Cortex
 import numpy as np
-from snowflake.core import Root
+from snowflake.connector import Root
 
 
 

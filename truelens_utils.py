@@ -218,6 +218,10 @@ class TruLensEvaluator:
                     schema="MYSCHEMA",
                     role="AccountAdmin"
                 )
+
+                # Set default session before creating the provider
+                from trulens.providers.cortex.provider import Cortex as CortexProvider
+                CortexProvider.DEFAULT_SNOWPARK_SESSION = session
                 
                 # Initialize Cortex with the native connection
                 self.provider = Cortex(

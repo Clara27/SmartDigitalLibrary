@@ -204,6 +204,22 @@ class TruLensEvaluator:
 
             print("Initializing Cortex provider...")
             try:
+              snowflake_conn = SnowflakeConnector(
+                    account=st.secrets["snowflake_account"],
+                    user=st.secrets["snowflake_user"],
+                    password=st.secrets["snowflake_password"],
+                    warehouse=st.secrets["snowflake_warehouse"],
+                    database="TESTDB",
+                    schema="MYSCHEMA",
+                    role="AccountAdmin"
+                )
+                
+                # Initialize Cortex with the connector
+               self.provider = Cortex(
+                    snowflake_conn=snowflake_conn,
+                    model="mistral-large2"
+                )
+               
                 self.provider = Cortex(
                     snowpark_session=session,
                     model="mistral-large2"

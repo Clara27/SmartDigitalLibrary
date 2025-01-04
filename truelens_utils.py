@@ -506,19 +506,19 @@ class TruLensEvaluator:
                 #print(f"Got response: {resp[:100]}...")
                 
                               
-            print("Capturing dashboard output")
-            sys.stdout = StringIO()
+            # print("Capturing dashboard output")
+            # sys.stdout = StringIO()
             
             tru.run_dashboard()
-            output = sys.stdout.getvalue()
-            print(f"Captured output: {output}")
+            # output = sys.stdout.getvalue()
+            # print(f"Captured output: {output}")
             
-            sys.stdout = stdout_backup
+            # sys.stdout = stdout_backup
             
-            network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
-            dashboard_url = network_url.group(1) if network_url else None
-            st.session_state.dashboard_url = dashboard_url
-            print(f"Extracted URL: {dashboard_url}")
+            # network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
+            # dashboard_url = network_url.group(1) if network_url else None
+            # st.session_state.dashboard_url = dashboard_url
+            # print(f"Extracted URL: {dashboard_url}")
             
             return {
                 'response': resp,

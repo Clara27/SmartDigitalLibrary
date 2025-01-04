@@ -422,7 +422,7 @@ class TruLensEvaluator:
     def evaluate_pal_chat(self, query: str, filename, operation_type: str, **kwargs):
         if not self.initialized:
             return None
-        stdout_backup = sys.stdout
+        # stdout_backup = sys.stdout
         try:
             print("Starting evaluate_pal_chat")
             self.rag = RAGPipeline()
@@ -449,19 +449,19 @@ class TruLensEvaluator:
                 #print(f"Got response: {resp[:100]}...")
                 
                               
-            print("Capturing dashboard output")
-            sys.stdout = StringIO()
+            # print("Capturing dashboard output")
+            # sys.stdout = StringIO()
             
             tru.run_dashboard()
-            output = sys.stdout.getvalue()
-            print(f"Captured output: {output}")
+            # output = sys.stdout.getvalue()
+            # print(f"Captured output: {output}")
             
-            sys.stdout = stdout_backup
+            # sys.stdout = stdout_backup
             
-            network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
-            dashboard_url = network_url.group(1) if network_url else None
-            st.session_state.dashboard_url = dashboard_url
-            st.write(f"Extracted URL: {dashboard_url}")
+            # network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
+            # dashboard_url = network_url.group(1) if network_url else None
+            # st.session_state.dashboard_url = dashboard_url
+            # st.write(f"Extracted URL: {dashboard_url}")
             
             return {
                 'response': resp,

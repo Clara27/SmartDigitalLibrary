@@ -205,23 +205,12 @@ class TruLensEvaluator:
             print("Initializing Cortex provider...")
             try:
               # Create SnowflakeConnector with correct parameters
-                 # Create SnowflakeConnector with correct parameters
-                snowflake_conn = SnowflakeConnector(
-                    account=st.secrets["snowflake_account"],
-                    user=st.secrets["snowflake_user"],
-                    password=st.secrets["snowflake_password"],
-                    warehouse=st.secrets["snowflake_warehouse"],
-                    database="TESTDB",
-                    schema="MYSCHEMA",
-                    role="AccountAdmin"
-                )
-                
-                # Set the default Snowpark session using existing Cortex import
+
                 Cortex.DEFAULT_SNOWPARK_SESSION = session
                 
                 # Initialize Cortex with the connector
                 self.provider = Cortex(
-                    snowflake_conn=snowflake_conn,
+                    snowpark_session=session,
                     model="mistral-large2"
                 )
                 print("✓ Cortex provider initialized")

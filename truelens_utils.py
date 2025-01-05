@@ -470,7 +470,7 @@ class TruLensEvaluator:
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")
             traceback.print_exc()
-            sys.stdout = stdout_backup
+            #sys.stdout = stdout_backup
             return None
             
         

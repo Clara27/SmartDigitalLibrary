@@ -455,6 +455,11 @@ class TruLensEvaluator:
         try:
             print("Starting evaluate_pal_chat")
             self.rag = RAGPipeline()
+            print("✓ RAG pipeline created")
+
+            print("2. Setting up TruCustomApp...")
+            print(f"Number of feedbacks: {len(self.all_feedbacks)}")
+            print(f"Feedback type: {type(self.all_feedbacks[0]).__name__}")
             
             # print ("before calling self.rag = Ragpipeline()")
             # self.rag = RAGPipeline()
@@ -469,13 +474,15 @@ class TruLensEvaluator:
                 app_id="rag_pipeline",
                 feedbacks=self.all_feedbacks,
              )
-                
+            print("✓ TruCustomApp created")
                            
-            
+            print("3. Starting evaluation with recording...")
             with self.tru_rag as recording:  
-                print("Inside tru_rag context")
+                print("Inside recording context")
                 resp = self.rag.process_query(query)
-                print(f"Got response: {resp[:100]}...")
+                print("Process query complete")
+                print(f"Response type: {type(resp)}")
+                #print(f"Got response: {resp[:100]}...")
                 
                               
             print("Capturing dashboard output")

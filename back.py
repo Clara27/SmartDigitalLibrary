@@ -147,7 +147,7 @@ Please format the response with clear section headers and bullet points for read
                 "warehouse": st.secrets["snowflake_warehouse"],
                 "database": st.secrets["snowflake_database"],
                 "schema": st.secrets["snowflake_schema"],
-                "role":"AccountAdmin"
+                "role":"st.secrets["AccountAdmin"],
             }).create()
             
             return session

@@ -205,68 +205,68 @@ class TruLensEvaluator:
             print("Initializing Cortex provider...")
             try:
               # Create SnowflakeConnector with correct parameters
-               import snowflake.connector
+                import snowflake.connector
+                    
+                connection_parameters = {
+                    "account": st.secrets["snowflake_account"],
+                    "user": st.secrets["snowflake_user"],
+                    "password": st.secrets["snowflake_password"],
+                    "role": st.secrets["snowflake_role"], 
+                    "database": st.secrets["snowflake_database"],
+                    "schema": st.secrets["snowflake_schema"],
+                    "warehouse": st.secrets["snowflake_warehouse"]
+                }
                 
-               connection_parameters = {
-                   "account": st.secrets["snowflake_account"],
-                   "user": st.secrets["snowflake_user"],
-                   "password": st.secrets["snowflake_password"],
-                   "role": st.secrets["snowflake_role"], 
-                   "database": st.secrets["snowflake_database"],
-                   "schema": st.secrets["snowflake_schema"],
-                   "warehouse": st.secrets["snowflake_warehouse"]
-               }
-               
-               # Create a Snowflake connection using the connection parameters
-               snowflake_conn = snowflake.connector.connect(
-                   **connection_parameters
-               )
-               
-               # Initialize Cortex with the Snowflake connection and model engine
-               self.provider = Cortex(
-                   snowflake_conn=snowflake_conn,
-                   model_engine="mistral-large2"
-               )
-
-               print("✓ Cortex provider initialized")
-
-                # Initialize feedback functions
-               print("Setting up feedback functions...")
-               self.rag = RAGPipeline() 
-               self.retriever = CortexSearchRetriever(session, limit_to_retrieve=4)
-                #self.get_document_summary = self.rag.get_document_summary
-
-
-            print("Initializing Cortex provider...")
-            try:
-            # ... connection setup code ...
-            
-            print("\n=== Setting up feedback functions ===")
-            
-            print("1. Initializing answer relevance feedback...")
-            self.f_answer_relevance = (
-                Feedback(self.provider.relevance_with_cot_reasons, name="Answer Relevance")
-                .on_input()
-                .on_output()
-            )
-            print("✓ Answer relevance feedback initialized")
-
-            print("\n2. Setting up context relevance feedback...")
-            try:
-                selector = Select.RecordCalls.retrieve_context.rets[:]
-                print(f"Debug - Selector type: {type(selector)}")
-                print(f"Debug - Selector value: {selector}")
-                
-                self.f_context_relevance = (
-                    Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
-                    .on_input()
-                    .on(selector)
-                    .aggregate(np.mean)
+                # Create a Snowflake connection using the connection parameters
+                snowflake_conn = snowflake.connector.connect(
+                    **connection_parameters
                 )
-                print("✓ Context relevance feedback initialized")
-            except Exception as e:
-                print(f"Error in context relevance setup: {str(e)}")
-                traceback.print_exc()
+                
+                # Initialize Cortex with the Snowflake connection and model engine
+                self.provider = Cortex(
+                    snowflake_conn=snowflake_conn,
+                    model_engine="mistral-large2"
+                )
+
+                print("✓ Cortex provider initialized")
+
+                    # Initialize feedback functions
+                print("Setting up feedback functions...")
+                self.rag = RAGPipeline() 
+                self.retriever = CortexSearchRetriever(session, limit_to_retrieve=4)
+                print("Initializing Cortex provider...")
+                
+                try:
+              
+                    print("\n=== Setting up feedback functions ===")
+                    
+                    print("1. Initializing answer relevance feedback...")
+                    self.f_answer_relevance = (
+                        Feedback(self.provider.relevance_with_cot_reasons, name="Answer Relevance")
+                        .on_input()
+                        .on_output()
+                    )
+                    print("✓ Answer relevance feedback initialized")
+
+                    print("\n2. Setting up Answer relevance feedback...")
+                except Exception as e:
+                    print(f"Error in context relevance setup: {str(e)}")
+                    traceback.print_exc()
+                try:
+                    selector = Select.RecordCalls.retrieve_context.rets[:]
+                    print(f"Debug - Selector type: {type(selector)}")
+                    print(f"Debug - Selector value: {selector}")
+                    
+                    self.f_context_relevance = (
+                        Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
+                        .on_input()
+                        .on(selector)
+                        .aggregate(np.mean)
+                    )
+                    print("✓ Context relevance feedback initialized")
+                except Exception as e:
+                    print(f"Error in context relevance setup: {str(e)}")
+                    traceback.print_exc()
 
                 print("\n3. Setting up groundedness feedback...")
                 try:

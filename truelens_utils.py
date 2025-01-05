@@ -237,54 +237,84 @@ class TruLensEvaluator:
                 #self.get_document_summary = self.rag.get_document_summary
 
 
-               self.f_answer_relevance = (
-                    Feedback(self.provider.relevance_with_cot_reasons, name="Answer Relevance")
-                    .on_input()
-                    .on_output()
-                )
-               self.f_context_relevance = (
+            print("Initializing Cortex provider...")
+            try:
+            # ... connection setup code ...
+            
+            print("\n=== Setting up feedback functions ===")
+            
+            print("1. Initializing answer relevance feedback...")
+            self.f_answer_relevance = (
+                Feedback(self.provider.relevance_with_cot_reasons, name="Answer Relevance")
+                .on_input()
+                .on_output()
+            )
+            print("✓ Answer relevance feedback initialized")
+
+            print("\n2. Setting up context relevance feedback...")
+            try:
+                selector = Select.RecordCalls.retrieve_context.rets[:]
+                print(f"Debug - Selector type: {type(selector)}")
+                print(f"Debug - Selector value: {selector}")
+                
+                self.f_context_relevance = (
                     Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
                     .on_input()
-                    .on(list(Select.RecordCalls.retrieve_context.rets)[:])
+                    .on(selector)
+                    .aggregate(np.mean)
                 )
-               self.f_groundedness = (
-                    Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
-                    .on(list(Select.RecordCalls.retrieve_context.rets).collect())
-                    .on_output()
-                )
-                
-                
-               self.f_controversiality = (
-                    Feedback(self.provider.controversiality_with_cot_reasons,name="Controversiality")
-                    .on_output()
-                )
-               self.f_insensitivity = (
-                    Feedback(self.provider.insensitivity_with_cot_reasons,name="Insensitivity")
-                    .on_output()
-                )
-  
-               self.f_coherence = (
-                    Feedback(self.provider.coherence_with_cot_reasons, name="Coherence")
-                    .on_output()
-                )
-                
-               
+                print("✓ Context relevance feedback initialized")
+            except Exception as e:
+                print(f"Error in context relevance setup: {str(e)}")
+                traceback.print_exc()
 
-                    
-               self.all_feedbacks = [           
-                    self.f_answer_relevance,
-                    self.f_context_relevance,
-                    self.f_groundedness,
-                    self.f_controversiality,
-                    self.f_insensitivity,
-                    self.f_coherence,
-                               
-                ]
-                
-                
-                
+               print("\n3. Setting up groundedness feedback...")
+               try:
+                   # Try different selector approaches
+                   print("Debug - Testing selector approaches:")
+                   
+                   # Approach 1: Using direct slice
+                   print("Trying direct slice...")
+                   selector1 = Select.RecordCalls.retrieve_context.rets[:]
+                   print(f"Selector1 type: {type(selector1)}")
+                   
+                   # Approach 2: Using collect
+                   print("Trying collect...")
+                   selector2 = Select.RecordCalls.retrieve_context.rets
+                   print(f"Selector2 type: {type(selector2)}")
+                   
+                   # Approach 3: Using alternative selector
+                   print("Trying alternative selector...")
+                   selector3 = Select.RecordCalls.retrieve_context.outputs
+                   print(f"Selector3 type: {type(selector3)}")
+                   
+                   self.f_groundedness = (
+                       Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
+                       .on(selector3)  # Using alternative selector
+                       .on_output()
+                   )
+                   print("✓ Groundedness feedback initialized")
+               except Exception as e:
+                   print(f"Error in groundedness setup: {str(e)}")
+                   traceback.print_exc()
+   
+               print("\n4. Setting up remaining feedbacks...")
+               self.f_coherence = (
+                   Feedback(self.provider.coherence_with_cot_reasons, name="Coherence")
+                   .on_output()
+               )
+               print("✓ Coherence feedback initialized")
+   
+               self.all_feedbacks = [
+                   self.f_answer_relevance,
+                   self.f_context_relevance,
+                   self.f_groundedness,
+                   self.f_coherence
+               ]
+               print("\n✓ All feedbacks initialized successfully")
                self.initialized = True
-               print("✓ TruLens evaluator fully initialized")
+
+
 
             except Exception as e:
                 print(f"ERROR during Cortex initialization: {str(e)}")

@@ -500,7 +500,7 @@ class TruLensEvaluator:
                 feedbacks=self.all_feedbacks,
             )
                 
-                           
+            print("✓ TruCustomApp created")            
             
             with self.tru_rag as recording:  
                 print("Inside tru_rag context")
@@ -521,15 +521,14 @@ class TruLensEvaluator:
             # dashboard_url = network_url.group(1) if network_url else None
             # st.session_state.dashboard_url = dashboard_url
             # print(f"Extracted URL: {dashboard_url}")
-            dashboard_rul = "10.0.0.1/8501"
+            #dashboard_rul = "10.0.0.1/8501"
             return {
-                'response': resp,
-                'dashboard_url': dashboard_url
+                'response': resp
             }
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")
             traceback.print_exc()
-            sys.stdout = stdout_backup
+            #sys.stdout = stdout_backup
             return None
             
     def calculate_metrics(self, record: Dict) -> Dict[str, float]:

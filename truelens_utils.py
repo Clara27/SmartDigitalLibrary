@@ -252,14 +252,14 @@ class TruLensEvaluator:
                 self.f_context_relevance = (
                     Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
                     .on_input()
-                    .on(lambda x: x.Select.RecordCalls.retrieve_context.rets[:])
+                    .on(Select.RecordCalls.retrieve_context.rets)
                     .aggregate(np.mean)
                 )
 
                 # Groundedness with outputs
                 self.f_groundedness = (
                     Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
-                    .on(lambda x: x.Select.RecordCalls.retrieve_context.rets.collect())
+                    .on(Select.RecordCalls.retrieve_context.rets)
                     .on_output()
                 )
 

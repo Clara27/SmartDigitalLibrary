@@ -250,7 +250,7 @@ class TruLensEvaluator:
                 )
                self.f_groundedness = (
                     Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
-                    .on(Select.RecordCalls.retrieve_context.rets.collect())
+                    .on(Select.RecordCalls.retrieve_context.rets)
                     .on_output()
                 )
                 

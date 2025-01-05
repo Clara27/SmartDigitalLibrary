@@ -153,8 +153,8 @@ class PDFLibraryApp:
         with header_cols[0]:
             st.markdown(
                 """
-                <div style="margin-top: -40px; text-align: left;">
-                    <img src="https://i.postimg.cc/cJrXGrxd/PALicon.png" width="150">
+                <div style="margin-top: -50px; text-align: left;">
+                    <img src="https://i.postimg.cc/cJrXGrxd/PALicon.png" width="130">
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -187,10 +187,10 @@ class PDFLibraryApp:
                     <h2 style="
                         margin: 0; 
                         padding: 0; 
-                        font-size: 28px; 
-                        font-weight: 500; 
+                        font-size: 20px; 
+                        font-weight: 350; 
                         line-height: 1.4;
-                        margin-left:30px; 
+                        margin-left:10px; 
                         color: #F7E7CE;">
                         Streamline Your Files, Empower Your Knowledge.
                     </h2>

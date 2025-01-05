@@ -268,51 +268,51 @@ class TruLensEvaluator:
                 print(f"Error in context relevance setup: {str(e)}")
                 traceback.print_exc()
 
-               print("\n3. Setting up groundedness feedback...")
-               try:
-                   # Try different selector approaches
-                   print("Debug - Testing selector approaches:")
-                   
-                   # Approach 1: Using direct slice
-                   print("Trying direct slice...")
-                   selector1 = Select.RecordCalls.retrieve_context.rets[:]
-                   print(f"Selector1 type: {type(selector1)}")
-                   
-                   # Approach 2: Using collect
-                   print("Trying collect...")
-                   selector2 = Select.RecordCalls.retrieve_context.rets
-                   print(f"Selector2 type: {type(selector2)}")
-                   
-                   # Approach 3: Using alternative selector
-                   print("Trying alternative selector...")
-                   selector3 = Select.RecordCalls.retrieve_context.outputs
-                   print(f"Selector3 type: {type(selector3)}")
-                   
-                   self.f_groundedness = (
-                       Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
-                       .on(selector3)  # Using alternative selector
-                       .on_output()
-                   )
-                   print("✓ Groundedness feedback initialized")
-               except Exception as e:
-                   print(f"Error in groundedness setup: {str(e)}")
-                   traceback.print_exc()
-   
-               print("\n4. Setting up remaining feedbacks...")
-               self.f_coherence = (
-                   Feedback(self.provider.coherence_with_cot_reasons, name="Coherence")
-                   .on_output()
-               )
-               print("✓ Coherence feedback initialized")
-   
-               self.all_feedbacks = [
-                   self.f_answer_relevance,
-                   self.f_context_relevance,
-                   self.f_groundedness,
-                   self.f_coherence
-               ]
-               print("\n✓ All feedbacks initialized successfully")
-               self.initialized = True
+                print("\n3. Setting up groundedness feedback...")
+                try:
+                    # Try different selector approaches
+                    print("Debug - Testing selector approaches:")
+                    
+                    # Approach 1: Using direct slice
+                    print("Trying direct slice...")
+                    selector1 = Select.RecordCalls.retrieve_context.rets[:]
+                    print(f"Selector1 type: {type(selector1)}")
+                    
+                    # Approach 2: Using collect
+                    print("Trying collect...")
+                    selector2 = Select.RecordCalls.retrieve_context.rets
+                    print(f"Selector2 type: {type(selector2)}")
+                    
+                    # Approach 3: Using alternative selector
+                    print("Trying alternative selector...")
+                    selector3 = Select.RecordCalls.retrieve_context.outputs
+                    print(f"Selector3 type: {type(selector3)}")
+                    
+                    self.f_groundedness = (
+                        Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
+                        .on(selector3)  # Using alternative selector
+                        .on_output()
+                    )
+                    print("✓ Groundedness feedback initialized")
+                except Exception as e:
+                    print(f"Error in groundedness setup: {str(e)}")
+                    traceback.print_exc()
+    
+                print("\n4. Setting up remaining feedbacks...")
+                self.f_coherence = (
+                    Feedback(self.provider.coherence_with_cot_reasons, name="Coherence")
+                    .on_output()
+                )
+                print("✓ Coherence feedback initialized")
+    
+                self.all_feedbacks = [
+                    self.f_answer_relevance,
+                    self.f_context_relevance,
+                    self.f_groundedness,
+                    self.f_coherence
+                ]
+                print("\n✓ All feedbacks initialized successfully")
+                self.initialized = True
 
 
 

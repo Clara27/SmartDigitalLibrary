@@ -271,8 +271,55 @@ class AdminPanel:
                             st.success("✅ All files processed!")
             
             with delete_tab:
-                # Your existing delete tab code...
-                pass
+                if st.session_state.files:
+                    st.subheader("Select Document to Delete")
+                    book_names = [f"{book['name']} ({book['category']})" for book in st.session_state.files]
+                    book_to_delete = st.selectbox(
+                        "Choose document",
+                        book_names,
+                        key="delete_book_selectbox"
+                    )
+                    
+                    if st.button("🗑️ Delete Document", type="primary"):
+                        try:
+                            progress_placeholder = st.empty()
+                            progress_placeholder.progress(0, text="Starting deletion...")
+                            
+                            selected_filename = book_to_delete.split(" (")[0]
+                            
+                            try:
+                                progress_placeholder.progress(0.33, text="Removing metadata...")
+                                delete_metadata_sql = f"""
+                                DELETE FROM TESTDB.MYSCHEMA.BOOK_METADATA 
+                                WHERE FILENAME = '{selected_filename.replace("'", "''")}'
+                                """
+                                session.sql(delete_metadata_sql).collect()
+                                
+                                progress_placeholder.progress(0.66, text="Removing document content...")
+                                delete_rag_sql = f"""
+                                DELETE FROM {SnowparkManager.RAG_TABLE}
+                                WHERE FILENAME = '{selected_filename.replace("'", "''")}'
+                                """
+                                session.sql(delete_rag_sql).collect()
+                                
+                                progress_placeholder.progress(1.0, text="Finalizing...")
+                                st.session_state.files = [
+                                    f for f in st.session_state.files 
+                                    if f['name'] != selected_filename
+                                ]
+                                
+                                progress_placeholder.empty()
+                                st.success(f"✅ Document '{selected_filename}' deleted successfully!")
+                                time.sleep(1)
+                                st.rerun()
+                                
+                            except Exception as e:
+                                st.error(f"Failed to delete from database: {str(e)}")
+                                
+                        except Exception as e:
+                            st.error(f"Error during deletion: {str(e)}")
+                else:
+                    st.info("No documents available to delete")
 
         with sidebar_col:
             self.render_admin_trivia()

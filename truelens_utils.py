@@ -467,7 +467,7 @@ class TruLensEvaluator:
             
             return {
                 'response': resp
-                'dashboard_url': dashboard_url
+                # 'dashboard_url': dashboard_url
             }
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")

@@ -417,7 +417,7 @@ class TruLensEvaluator:
     def evaluate_pal_chat(self, query: str, filename, operation_type: str, **kwargs):
         if not self.initialized:
             return None
-        # stdout_backup = sys.stdout
+        stdout_backup = sys.stdout
         try:
             print("Starting evaluate_pal_chat")
             self.rag = RAGPipeline()
@@ -452,18 +452,18 @@ class TruLensEvaluator:
                 
                               
             print("Capturing dashboard output")
-            # sys.stdout = StringIO()
+            sys.stdout = StringIO()
             
             tru.run_dashboard()
-            # output = sys.stdout.getvalue()
-            # print(f"Captured output: {output}")
+            output = sys.stdout.getvalue()
+            print(f"Captured output: {output}")
             
-            # sys.stdout = stdout_backup
+            sys.stdout = stdout_backup
             
-            # network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
-            # dashboard_url = network_url.group(1) if network_url else None
-            # st.session_state.dashboard_url = dashboard_url
-            # st.write(f"Extracted URL: {dashboard_url}")
+            network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
+            dashboard_url = network_url.group(1) if network_url else None
+            st.session_state.dashboard_url = dashboard_url
+            st.print(f"Extracted URL: {dashboard_url}")
             
             return {
                 'response': resp
@@ -472,7 +472,7 @@ class TruLensEvaluator:
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")
             traceback.print_exc()
-            #sys.stdout = stdout_backup
+            sys.stdout = stdout_backup
             return None
             
         
@@ -481,7 +481,7 @@ class TruLensEvaluator:
     def evaluate_rag_pipeline(self, query: str, filename, operation_type: str, **kwargs):
         if not self.initialized:
             return None
-        #stdout_backup = sys.stdout
+        stdout_backup = sys.stdout
         try:
             print("Starting evaluate_rag_pipeline")
             self.rag = RAGPipeline()
@@ -509,26 +509,26 @@ class TruLensEvaluator:
                 
                               
             print("Capturing dashboard output")
-            # sys.stdout = StringIO()
+            sys.stdout = StringIO()
             
             tru.run_dashboard()
-            # output = sys.stdout.getvalue()
-            # print(f"Captured output: {output}")
+            output = sys.stdout.getvalue()
+            print(f"Captured output: {output}")
             
-            # sys.stdout = stdout_backup
+            sys.stdout = stdout_backup
             
-            # network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
-            # dashboard_url = network_url.group(1) if network_url else None
-            # st.session_state.dashboard_url = dashboard_url
-            # print(f"Extracted URL: {dashboard_url}")
-            #dashboard_rul = "10.0.0.1/8501"
+            network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
+            dashboard_url = network_url.group(1) if network_url else None
+            st.session_state.dashboard_url = dashboard_url
+            print(f"Extracted URL: {dashboard_url}")
+            
             return {
                 'response': resp
             }
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")
             traceback.print_exc()
-            #sys.stdout = stdout_backup
+            sys.stdout = stdout_backup
             return None
             
     def calculate_metrics(self, record: Dict) -> Dict[str, float]:

@@ -187,8 +187,8 @@ class PDFLibraryApp:
                     <h2 style="
                         margin: 0; 
                         padding: 0; 
-                        font-size: 28px; 
-                        font-weight: 400; 
+                        font-size: 24px; 
+                        font-weight: 350; 
                         line-height: 1.4;
                         margin-left:30px; 
                         color: #F7E7CE;">

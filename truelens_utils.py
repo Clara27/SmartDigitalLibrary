@@ -248,20 +248,20 @@ class TruLensEvaluator:
                     .on_output()
                 )
 
-                # # Update context relevance to use outputs
-                # self.f_context_relevance = (
-                #     Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
-                #     .on_input()
-                #     .on(Select.RecordCalls.retrieve_context.outputs)
-                #     .aggregate(np.mean)
-                # )
+                # Update context relevance to use outputs
+                self.f_context_relevance = (
+                    Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
+                    .on_input()
+                    .on(Select.RecordCalls.retrieve_context.rets[:])
+                    .aggregate(np.mean)
+                )
 
-                # # Groundedness with outputs
-                # self.f_groundedness = (
-                #     Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
-                #     .on(Select.RecordCalls.retrieve_context.outputs)
-                #     .on_output()
-                # )
+                # Groundedness with outputs
+                self.f_groundedness = (
+                    Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
+                    .on(Select.RecordCalls.retrieve_context.rets.collect())
+                    .on_output()
+                )
 
                 # Coherence stays as is since it doesn't use retrieve_context
                 self.f_coherence = (
@@ -271,9 +271,9 @@ class TruLensEvaluator:
 
                 self.all_feedbacks = [
                     self.f_answer_relevance,
-                    # self.f_context_relevance,
-                    # self.f_groundedness,
-                    self.f_coherence
+                    self.f_context_relevance,
+                    self.f_groundedness,
+                    self.f_coherence,
                 ]
                 print("✓ Coherence feedback initialized")
 

@@ -187,10 +187,10 @@ class PDFLibraryApp:
                     <h2 style="
                         margin: 0; 
                         padding: 0; 
-                        font-size: 24px; 
+                        font-size: 20px; 
                         font-weight: 350; 
                         line-height: 1.4;
-                        margin-left:20px; 
+                        margin-left:10px; 
                         color: #F7E7CE;">
                         Streamline Your Files, Empower Your Knowledge.
                     </h2>

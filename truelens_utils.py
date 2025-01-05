@@ -252,14 +252,14 @@ class TruLensEvaluator:
                 self.f_context_relevance = (
                     Feedback(self.provider.context_relevance_with_cot_reasons, name="Context Relevance")
                     .on_input()
-                    .on(Select.RecordCalls.retrieve_context.rets)
+                    .on(Select.RecordCalls.retrieve_context.rets[:])
                     .aggregate(np.mean)
                 )
 
                 # Groundedness with outputs
                 self.f_groundedness = (
                     Feedback(self.provider.relevance_with_cot_reasons, name="Groundedness")
-                    .on(Select.RecordCalls.retrieve_context.rets)
+                    .on(Select.RecordCalls.retrieve_context.rets.collect())
                     .on_output()
                 )
 
@@ -417,7 +417,7 @@ class TruLensEvaluator:
     def evaluate_pal_chat(self, query: str, filename, operation_type: str, **kwargs):
         if not self.initialized:
             return None
-        # stdout_backup = sys.stdout
+        stdout_backup = sys.stdout
         try:
             print("Starting evaluate_pal_chat")
             self.rag = RAGPipeline()
@@ -427,8 +427,8 @@ class TruLensEvaluator:
             print(f"Number of feedbacks: {len(self.all_feedbacks)}")
             print(f"Feedback type: {type(self.all_feedbacks[0]).__name__}")
             
-            # print ("before calling self.rag = Ragpipeline()")
-            # self.rag = RAGPipeline()
+            print ("before calling self.rag = Ragpipeline()")
+            self.rag = RAGPipeline()
             
                
             print ("before self.tru_rag")
@@ -452,27 +452,27 @@ class TruLensEvaluator:
                 
                               
             print("Capturing dashboard output")
-            # sys.stdout = StringIO()
+            sys.stdout = StringIO()
             
             tru.run_dashboard()
-            # output = sys.stdout.getvalue()
-            # print(f"Captured output: {output}")
+            output = sys.stdout.getvalue()
+            print(f"Captured output: {output}")
             
-            # sys.stdout = stdout_backup
+            sys.stdout = stdout_backup
             
-            # network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
-            # dashboard_url = network_url.group(1) if network_url else None
-            # st.session_state.dashboard_url = dashboard_url
-            # st.write(f"Extracted URL: {dashboard_url}")
+            network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
+            dashboard_url = network_url.group(1) if network_url else None
+            st.session_state.dashboard_url = dashboard_url
+            st.write(f"Extracted URL: {dashboard_url}")
             
             return {
                 'response': resp
-                #'dashboard_url': dashboard_url
+                'dashboard_url': dashboard_url
             }
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")
             traceback.print_exc()
-            #sys.stdout = stdout_backup
+            sys.stdout = stdout_backup
             return None
             
         

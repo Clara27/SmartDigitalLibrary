@@ -190,7 +190,7 @@ class PDFLibraryApp:
                         font-size: 24px; 
                         font-weight: 350; 
                         line-height: 1.4;
-                        margin-left:30px; 
+                        margin-left:20px; 
                         color: #F7E7CE;">
                         Streamline Your Files, Empower Your Knowledge.
                     </h2>

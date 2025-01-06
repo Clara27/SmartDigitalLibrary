@@ -427,8 +427,8 @@ class TruLensEvaluator:
             print(f"Number of feedbacks: {len(self.all_feedbacks)}")
             print(f"Feedback type: {type(self.all_feedbacks[0]).__name__}")
             
-            # print ("before calling self.rag = Ragpipeline()")
-            # self.rag = RAGPipeline()
+            print ("before calling self.rag = Ragpipeline()")
+            self.rag = RAGPipeline()
             
                
             print ("before self.tru_rag")
@@ -467,7 +467,7 @@ class TruLensEvaluator:
             
             return {
                 'response': resp
-                #'dashboard_url': dashboard_url
+                # 'dashboard_url': dashboard_url
             }
         except Exception as e:
             print(f"Error in RAG pipeline evaluation: {str(e)}")

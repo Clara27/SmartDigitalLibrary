@@ -1087,6 +1087,8 @@ Please format the response with clear section headers and bullet points for read
                         ACTION_TYPE,
                         USER_QUERY,
                         STATUS,
+                        TOKEN_COUNT,
+                        MEMORY_USAGE_MB,
                         RESPONSE_TIME_MS
                     ) VALUES (
                         '{str(uuid.uuid4())}',

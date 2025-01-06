@@ -421,7 +421,7 @@ class TruLensEvaluator:
         try:
             print("Starting evaluate_pal_chat")
             self.rag = RAGPipeline()
-            print("✓ RAG pipeline created")
+            print("✓ PAL Chat created")
 
             print("2. Setting up TruCustomApp...")
             print(f"Number of feedbacks: {len(self.all_feedbacks)}")
@@ -463,7 +463,7 @@ class TruLensEvaluator:
             network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
             dashboard_url = network_url.group(1) if network_url else None
             st.session_state.dashboard_url = dashboard_url
-            st.print(f"Extracted URL: {dashboard_url}")
+            st.write(f"Extracted URL: {dashboard_url}")
             
             return {
                 'response': resp
@@ -486,12 +486,16 @@ class TruLensEvaluator:
             print("Starting evaluate_rag_pipeline")
             self.rag = RAGPipeline()
             
-            # print ("After calling self.rag = Ragpipeline()")
-            # self.rag = RAGPipeline()
+            print("✓ RAG pipeline created")
+
+            print("2. Setting up TruCustomApp...")
+            print(f"Number of feedbacks: {len(self.all_feedbacks)}")
+            print(f"Feedback type: {type(self.all_feedbacks[0]).__name__}")
             
                
             print ("before self.tru_rag")
             # Initialize your TruCustomApp with the configuration
+            print("3. Starting evaluation with recording...")
             self.tru_rag = TruCustomApp(
                 app=self.rag,
                 app_name="RAG Pipeline",
@@ -505,7 +509,8 @@ class TruLensEvaluator:
             with self.tru_rag as recording:  
                 print("Inside tru_rag context")
                 resp = self.rag.process_query(query)
-                print(f"Got response: {resp[:100]}...")
+                print("Process query complete")
+                print(f"Response type: {type(resp)}")
                 
                               
             print("Capturing dashboard output")

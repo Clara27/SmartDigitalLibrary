@@ -486,7 +486,7 @@ class TruLensEvaluator:
             print("Starting evaluate_rag_pipeline")
             self.rag = RAGPipeline()
             
-            # print ("before calling self.rag = Ragpipeline()")
+            # print ("After calling self.rag = Ragpipeline()")
             # self.rag = RAGPipeline()
             
                

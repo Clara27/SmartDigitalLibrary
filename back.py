@@ -1021,7 +1021,7 @@ Please format the response with clear section headers and bullet points for read
             # print("Debug - Results before cortex.complete inside semantic_search_llm")
             # First, prepare the system prompt
             # First, prepare the system prompt with proper escaping for SQL
-            system_prompt = """You are an AI assistant analyzing search results from various documents.
+            system_prompt = """You are an AI assistant specifically analyzing the document '{book_name}'.
 
             Instructions:
             1. Base your answers ONLY on the provided context below
@@ -1089,7 +1089,7 @@ Please format the response with clear section headers and bullet points for read
                         STATUS,
                         TOKEN_COUNT,
                         MEMORY_USAGE_MB,
-                        RESPONSE_TIME_MS
+                        RESPONSE_TIME_MS,
                     ) VALUES (
                         '{str(uuid.uuid4())}',
                         CURRENT_TIMESTAMP(),
@@ -1099,7 +1099,7 @@ Please format the response with clear section headers and bullet points for read
                         'success',
                         {output_token_count},
                         {memory_mb},
-                        {processing_time}
+                        {processing_time},
                     )
                     """
                     session.sql(metrics_sql).collect()                  

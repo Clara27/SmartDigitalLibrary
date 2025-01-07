@@ -1018,8 +1018,9 @@ Please format the response with clear section headers and bullet points for read
                 for r in processed_results
             )
 
-            # System prompt with the actual filename
-            system_prompt = f"""You are an AI assistant specifically analyzing the document '{filename if filename else 'the provided documents'}'. 
+            system_prompt = f"""You are an AI assistant specifically analyzing the document:
+            Name: {filename['name']}
+
 
             Instructions:
             1. Base your answers ONLY on the provided context below

@@ -1014,14 +1014,12 @@ Please format the response with clear section headers and bullet points for read
 
             # Prepare context more efficiently
             context = "\n\n".join(
-                f"Section {i+1} (from {r['FILENAME']}, Page {r['PAGE_NUMBER'] or 'N/A'}):\n{r['CONTENT']}"
-                for i, r in enumerate(processed_results)
+                f"Page {r['PAGE_NUMBER']}: {r['CONTENT']}"
+                for r in processed_results
             )
 
-            # print("Debug - Results before cortex.complete inside semantic_search_llm")
-            # First, prepare the system prompt
-            # First, prepare the system prompt with proper escaping for SQL
-            system_prompt = """You are an AI assistant specifically analyzing the document '{book_name}'.
+            # System prompt with the actual filename
+            system_prompt = f"""You are an AI assistant specifically analyzing the document '{filename if filename else 'the provided documents'}'. 
 
             Instructions:
             1. Base your answers ONLY on the provided context below

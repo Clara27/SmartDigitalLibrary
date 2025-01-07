@@ -271,7 +271,7 @@ class TruLensEvaluator:
                 )
                                 # Coherence stays as is since it doesn't use retrieve_context
                 self.f_correctness = (
-                    Feedback(self.provider.correctness_with_cot_reasons, name="Coherence")
+                    Feedback(self.provider.correctness_with_cot_reasons, name="Correctness")
                     .on_output()
                 )
 

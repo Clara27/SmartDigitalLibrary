@@ -1487,8 +1487,29 @@ class PDFLibraryApp:
                         # Display sources if available
                         if qa_results.get('sources'):
                             with st.expander("📚 View Sources", expanded=False):
-                                for source in qa_results.get('sources', []):
-                                    st.markdown(f"- Page {source['page']}: {source['score']:.2f} relevance score")
+                                st.markdown("#### Source References")
+                                for idx, source in enumerate(qa_results.get('sources', []), 1):
+                                    filename = source.get('filename', 'Unknown')
+                                    page = source.get('page', 'N/A')
+                                    
+                                    # Extract content snippet if available
+                                    content_snippet = source.get('content', '')
+                                    if content_snippet:
+                                        content_snippet = content_snippet[:200] + '...' if len(content_snippet) > 200 else content_snippet
+                                        
+                                    st.markdown(f"""
+                                        <div style='
+                                            background-color: #4E2A84;
+                                            padding: 10px;
+                                            border-radius: 5px;
+                                            margin: 5px 0;
+                                            border: 1px solid #541680;'>
+                                            <strong>Source {idx}</strong><br/>
+                                            📄 <strong>File</strong>: {filename}<br/>
+                                            📑 <strong>Page</strong>: {page}<br/>
+                                            {f"💡 <strong>Excerpt</strong>: <i>{content_snippet}</i>" if content_snippet else ""}
+                                        </div>
+                                    """, unsafe_allow_html=True)
                         
                         # TruLens evaluation
                         # try:

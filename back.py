@@ -1018,8 +1018,7 @@ Please format the response with clear section headers and bullet points for read
                 for r in processed_results
             )
 
-            system_prompt = f"""You are an AI assistant specifically analyzing the document:
-            Name: {filename['name']}
+            system_prompt = f"""You are an AI assistant specifically analyzing the document:'{filename}'.
 
 
             Instructions:

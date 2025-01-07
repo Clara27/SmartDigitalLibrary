@@ -283,6 +283,8 @@ class TruLensEvaluator:
                     self.f_correctness,
                 ]
                 
+                self.rag = RAGPipeline()
+                
                 self.tru_rag = TruCustomApp(
                 app=self.rag,
                 app_name="RAG Pipeline",

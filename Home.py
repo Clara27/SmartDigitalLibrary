@@ -434,13 +434,15 @@ class PDFLibraryApp:
        
         
         # API Key input in main content
-        api_key = col1.text_input(
-            "Enter your Mistral API Key",
-            value=st.session_state.mistral_api_key,
-            type="password",
-            help="Enter your Mistral API key",
-            placeholder="Enter your Mistral API key here..."
-        )
+        # api_key = col1.text_input(
+        #     "Enter your Mistral API Key",
+        #     value=st.session_state.mistral_api_key,
+        #     type="password",
+        #     help="Enter your Mistral API key",
+        #     placeholder="Enter your Mistral API key here..."
+        # )
+        
+        api_key = st.secrets["MISTRAL_API_KEY"]
         
         # Validate API key only when it changes
         if api_key != st.session_state.mistral_api_key:

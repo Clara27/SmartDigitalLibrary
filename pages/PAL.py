@@ -15,7 +15,7 @@ class PAL:
             f"""
             <style>
                 .stApp {{
-                    background-image: url("https://i.postimg.cc/bwT8wrQM/backpal.png");
+                    background-image: url("https://i.postimg.cc/L4yW5ZDv/Pal-background.png");
                     background-size: cover;
                     background-repeat: no-repeat;
                     background-attachment: fixed;

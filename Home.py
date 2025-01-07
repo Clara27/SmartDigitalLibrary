@@ -451,7 +451,7 @@ class PDFLibraryApp:
             if api_key:
                 if SnowparkManager.validate_api_key(api_key):
                     st.session_state.api_key_valid = True
-                    st.success("✅ API Key validated successfully!")
+                    #st.success("✅ API Key validated successfully!")
                 else:
                     st.session_state.api_key_valid = False
                     st.error("❌ Invalid API Key")

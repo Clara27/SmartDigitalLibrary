@@ -982,14 +982,14 @@ Please format the response with clear section headers and bullet points for read
                 try:
                     content = result['CONTENT'].strip() if result['CONTENT'] is not None else ""
                     
-                    metadata = result.get('METADATA', {})
-                    page_number = metadata.get('page_number', 1) if isinstance(metadata, dict) else 1
+                    #metadata = result.get('METADATA', {})
+                    #page_number = metadata.get('page_number', 1) if isinstance(metadata, dict) else 1
 
                     processed_results.append({
                         'DOC_ID': result.get('DOC_ID', f'doc_{idx}'),
                         'FILENAME': result.get('FILENAME', 'Unknown'),
                         'CONTENT': content[:300] + "..." if len(content) > 300 else content,
-                        'PAGE_NUMBER': page_number,  # Using extracted page number
+                        'PAGE_NUMBER': result.get('PAGE_NUMBER', 1),
                         'SIMILARITY_SCORE': float(result['SCORE']) if 'SCORE' in result else float(result.get('_SCORE', 0.0))
                     })
                     # print(f"Debug - Results after formatting: {len(processed_results)}")

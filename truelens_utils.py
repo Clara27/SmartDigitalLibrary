@@ -171,6 +171,7 @@ class RAGPipeline:
             # Generate completion using contexts
             response = self.generate_completion(query, contexts)
             
+            
             return {
                 "response": response,
                 "contexts": contexts,
@@ -268,13 +269,28 @@ class TruLensEvaluator:
                     Feedback(self.provider.coherence_with_cot_reasons, name="Coherence")
                     .on_output()
                 )
+                                # Coherence stays as is since it doesn't use retrieve_context
+                self.f_correctness = (
+                    Feedback(self.provider.correctness_with_cot_reasons, name="Coherence")
+                    .on_output()
+                )
 
                 self.all_feedbacks = [
                     self.f_answer_relevance,
                     self.f_context_relevance,
                     self.f_groundedness,
                     self.f_coherence,
+                    self.f_correctness,
                 ]
+                
+                self.tru_rag = TruCustomApp(
+                app=self.rag,
+                app_name="RAG Pipeline",
+                app_version="base1",
+                app_id="rag_pipeline",
+                feedbacks=self.all_feedbacks,
+            )
+                
                 print("✓ Coherence feedback initialized")
 
                 print("\n✓ All feedbacks initialized successfully")

@@ -826,26 +826,32 @@ class DashboardPage:
         * Document Processing Patterns
         * Usage Statistics
 
-        Required Presentation Structure: (15 seconds)
+        Required Presentation Structure: 
         1. Introduction 
             - Overview of current system state
             - Highlight key metrics
+            -(Suggested duration: 25 seconds)
 
-        2. System Performance Analysis (15 seconds)
+        2. System Performance Analysis 
             - Response time trends and implications
             - Resource utilization patterns
             - Success rate analysis
             - Token usage efficiency
+            -(Suggested duration: 20 seconds)
 
-        3. Document Analytics (15 seconds)
+        3. Document Analytics 
             - Document processing statistics
             - Usage patterns and trends
             - Optimization opportunities
+            -(Suggested duration: 15 seconds)
 
-        4. Recommendations & Conclusion (30 seconds)
+        4. Recommendations & Conclusion 
             - Key performance insights
             - Specific improvement recommendations
-
+            -(Suggested duration: 40 seconds)
+            -Conclude within specified duration
+            -Tailor these recommendations to the target audience’s 
+            
         Target Audience: {settings['audience']}
         Technical Detail Level: {settings['tech_level']}
         Presentation Style: {settings['style']}

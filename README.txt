@@ -1,2 +1,2 @@
 # SmartDigitalLibrary
-Discover AI Insights
+Uncover AI Insights

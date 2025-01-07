@@ -1014,8 +1014,8 @@ Please format the response with clear section headers and bullet points for read
 
             # Prepare context more efficiently
             context = "\n\n".join(
-                f"Page {r['PAGE_NUMBER']}: {r['CONTENT']}"
-                for r in processed_results
+                f"Section {i+1} (from {r['FILENAME']}, Page {r['PAGE_NUMBER'] or 'N/A'}):\n{r['CONTENT']}"
+                for i, r in enumerate(processed_results)
             )
 
             system_prompt = f"""You are an AI assistant specifically analyzing the document:'{filename}'.

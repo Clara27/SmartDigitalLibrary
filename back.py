@@ -909,7 +909,7 @@ Please format the response with clear section headers and bullet points for read
     def semantic_search_with_llm(
             query: str,
             filename: Optional[str] = None,
-            limit: int = 5,
+            limit: int = 4,
             similarity_threshold: float = 0.1,
             max_tokens_per_context: int = 500,
             temperature: float = 0.3,
@@ -935,10 +935,15 @@ Please format the response with clear section headers and bullet points for read
             escaped_query = query.replace("'", "''")
              # Build the search condition based on filename
             if filename:
-                escaped_filename = filename.replace("'", "''")
-                filename_condition = f"AND FILENAME = '{escaped_filename}'"
-            else:
-                filename_condition = ""
+                safe_filename = filename.replace("'", "''")
+                content_query = f"""
+                SELECT CONTENT, METADATA:page_number::INTEGER as PAGE_NUM
+                FROM RAG_DOCUMENTS_TMP
+                WHERE FILENAME = '{safe_filename}'
+                ORDER BY PAGE_NUM
+                """
+                all_pages = session.sql(content_query).collect()
+                page_map = {row['PAGE_NUM']: row['CONTENT'] for row in all_pages}
 
 
             root = Root(session)
@@ -976,24 +981,26 @@ Please format the response with clear section headers and bullet points for read
            # Process results
             processed_results = []
             for idx, result in enumerate(resp.results):
-                print(f"Processing result {idx}...")
-                print(f"Type: {type(result)}")
-                print(f"Available fields: {result.keys() if hasattr(result, 'keys') else dir(result)}")
+                # print(f"Processing result {idx}...")
+                # print(f"Type: {type(result)}")
+                # print(f"Available fields: {result.keys() if hasattr(result, 'keys') else dir(result)}")
                 try:
                     content = result['CONTENT'].strip() if result['CONTENT'] is not None else ""
                     
-                    #metadata = result.get('METADATA', {})
-                    #page_number = metadata.get('page_number', 1) if isinstance(metadata, dict) else 1
-
+                    metadata = result.get('METADATA', {})
+                    matching_page = next((page_num for page_num, page_content in page_map.items() 
+                            if content in page_content), 1)
+                    
                     processed_results.append({
                         'DOC_ID': result.get('DOC_ID', f'doc_{idx}'),
                         'FILENAME': result.get('FILENAME', 'Unknown'),
                         'CONTENT': content[:300] + "..." if len(content) > 300 else content,
-                        'PAGE_NUMBER': result.get('PAGE_NUMBER', 1),
+                        'PAGE_NUMBER': matching_page
                         'SIMILARITY_SCORE': float(result['SCORE']) if 'SCORE' in result else float(result.get('_SCORE', 0.0))
                     })
                     # print(f"Debug - Results after formatting: {len(processed_results)}")
                     # print(f"Debug - Successfully processed result for {result.get('FILENAME', 'Unknown')}")
+                    # print(f"Debug - page number: {matching_page}")
                 except Exception as e:
                     print(f"Error processing result {idx}: {str(e)}")
 
@@ -1026,7 +1033,8 @@ Please format the response with clear section headers and bullet points for read
             2. If you cannot find the information in the context, say ''I cannot find information about [topic] in the provided context''
             3. When citing information, mention which section/document it comes from
             4. Be precise and accurate - do not make assumptions
-            5. If the question is unclear, ask for clarification"""
+            5. If information spans multiple pages, mention all relevant page numbers
+            6. If the question is unclear, ask for clarification"""
 
             # Combine with style instructions and context
             full_system_prompt = f"{system_prompt}\n\nStyle instructions: {style_instr}\nFormat instructions: {format_instr}\n\nContext:\n{context}"

@@ -1003,7 +1003,7 @@ class PDFLibraryApp:
             )
             max_tokens = st.slider(
                 "Summary Length", 
-                500, 2000, 1000,
+                500, 1000, 750,
                 help="Control the length of the summary"
             )
         with col2:
@@ -1436,7 +1436,7 @@ class PDFLibraryApp:
         with col2:
             max_tokens = st.slider(
                 "Maximum Length", 
-                100, 2000, 1000,
+                100, 400, 250,
                 help="Control the length of the response"
             )
             include_quotes = st.checkbox(

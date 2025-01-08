@@ -1029,7 +1029,7 @@ Please format the response with clear section headers and bullet points for read
 
 
             Instructions:
-            1. Base your answers ONLY on the provided context below
+            1. Base your answers on the provided context below
             2. If you cannot find the information in the context, say ''I cannot find information about [topic] in the provided context''
             3. When citing information, mention which section/document it comes from
             4. Be precise and accurate - do not make assumptions

@@ -1040,22 +1040,23 @@ class DashboardPage:
         
        # Instructions
         st.markdown("""
-            <div style='
-                background-color: #4E2A84;
-                color: white;
-                padding: 1rem;
-                border-radius: 0.5rem;
-                margin-bottom: 1rem;
-            '>
-                <h3 style='margin-bottom: 0.5rem;'>🎙️ AI Presenter Instructions</h3>
-                <ol style='margin-top: 0;'>
-                    <li>🖱️ On the sidebar, click the <strong>"Generate Presentation"</strong> button.</li>
-                    <li>📊 Once the presentation is successfully generated, it will be displayed in this tab.</li>
-                    <li>🌍 Select the desired accent from the combo box on the sidebar.</li>
-                    <li>🔊 Click the <strong>"AI Presenter"</strong> button to have the presentation read aloud by the PAL AI.</li>
-                </ol>
-            </div>
-        """, unsafe_allow_html=True)
+                <div style='
+                    background-color: #4E2A84;
+                    color: white;
+                    padding: 1rem;
+                    border-radius: 0.5rem;
+                    margin-bottom: 1rem;
+                '>
+                    <h3 style='margin-bottom: 0.5rem;'>🎙️ AI Presenter Instructions</h3>
+                    <ol style='margin-top: 0;'>
+                        <li>🖱️ On the sidebar, click the <strong>"Generate Presentation"</strong> button.</li>
+                        <li>📊 Once the presentation is successfully generated, it will be displayed in this tab.</li>
+                        <li>🌍 Select the desired accent from the combo box on the sidebar.</li>
+                        <li>🔊 Click the <strong>"AI Presenter"</strong> button to have the presentation read aloud by the PAL AI.</li>
+                        <li>👀 While the presentation is being read, you can seamlessly explore other parts of the dashboard without interrupting the audio. 🎧</li>
+                    </ol>
+                </div>
+            """, unsafe_allow_html=True)
 
     
             

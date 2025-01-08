@@ -126,32 +126,21 @@ bash
 Copy
 streamlit run PAL.py
 Usage
-Document Management
-1.	Use Admin Panel to upload documents
-2.	Assign categories and metadata
-3.	Monitor processing status
-Chat Interface
-1.	Select a document from the library
-2.	Use natural language to ask questions
-3.	View chat history and responses
-Analytics
-1.	Access Dashboard for system metrics
-2.	Monitor performance and usage
-3.	Generate AI-powered presentations
-Evaluation
-1.	Use TruLens Dashboard for quality metrics
-2.	Monitor response quality
-3.	Track system performance
-Architecture
-The system uses a modular architecture with:
-•	Streamlit for frontend
-•	Snowflake for data storage and processing
-•	TruLens for evaluation
-•	Custom utilities for specialized operations
-Security and Performance
-•	Secure Snowflake integration
-•	Optimized document processing
-•	Efficient memory management
-•	Real-time monitoring
-•	Error handling and logging
+  Document Management
+   1.	Use Admin Panel to upload documents
+   2.	Assign categories and metadata
+   3.	Monitor processing status
+  Chat Interface
+   1.	Select a document from the library
+   2.	Use natural language to ask questions
+   3.	View chat history and responses
+  Analytics
+   1.	Access Dashboard for system metrics
+   2.	Monitor performance and usage
+   3.	Generate AI-powered presentations
+  Evaluation
+   1.	Use TruLens Dashboard for quality metrics
+   2.	Monitor response quality
+   3.	Track system performance
+  
 

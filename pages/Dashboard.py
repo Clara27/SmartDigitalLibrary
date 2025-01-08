@@ -1037,6 +1037,27 @@ class DashboardPage:
         if metrics_data is None:
             st.warning("No metrics data available for presentation")
             return
+        
+        # Instructions
+        st.markdown("""
+            <div style='
+                background-color: #4E2A84;
+                color: white;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+            '>
+                <h3 style='margin-bottom: 0.5rem;'>🎙️ AI Presenter Instructions</h3>
+                <ol style='margin-top: 0;'>
+                    <li>On the sidebar, click the "Generate Presentation" button.</li>
+                    <li>Once the presentation is successfully generated, it will be displayed in this tab.</li>
+                    <li>Select the desired accent from the combo box on the sidebar.</li>
+                    <li>Click the "AI Presenter" button to have the presentation read aloud by the PAL AI.</li>
+                </ol>
+            </div>
+        """, unsafe_allow_html=True)
+
+    
             
         # Controls in sidebar
         with st.sidebar:

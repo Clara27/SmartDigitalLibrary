@@ -21,6 +21,7 @@ from truelens_utils import TruLensEvaluator
 import os
 import tempfile
 from gtts import gTTS
+import markdown
 
   
   
@@ -851,11 +852,12 @@ class PDFLibraryApp:
 
                             if not SnowparkManager.ensure_table_exists(session):
                                 return
-
+                            chunk_size = SnowparkManager.CHUNK_SIZE_OPTIONS["Medium"]   
                             success, error_msg, documents = SnowparkManager.process_pdf(
                                 uploaded_file.read(), 
                                 uploaded_file.name, 
-                                uploaded_file.type
+                                uploaded_file.type,
+                                chunk_size
                             )
 
                             if success:
@@ -1333,88 +1335,273 @@ class PDFLibraryApp:
     #         'size': book.get('size', '')
     #     }
         
-                            
-                            
-            
     def display_content_block(self, content):
-        """Helper method to display content block with consistent dark theme styling and read aloud feature"""
-        
-        # Display content
-        # Display content with solid background
-    def display_content_block(self, content):
-        """Helper method to display content block with consistent book-like page styling"""
-    
-        st.markdown(f"""
-            <div style="
-                background-color: #593163;
-                color: #FFFFFF;
-                padding: 3rem;  /* Increased padding */
-                border-radius: 8px;
-                border: 1px solid #541680;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-                font-family: Tahoma, sans-serif;
-                font-size: 16px;
-                line-height: 1.6;
-                height: 800px;  /* Fixed height for consistency */
-                width: 90%;    /* Fixed width relative to container */
-                margin: 2rem auto;  /* Center the box and add vertical spacing */
-                overflow-y: auto;
-                white-space: pre-wrap;
-                position: relative;  /* For positioning */
-                min-height: 600px;  /* Minimum height */
-                letter-spacing: 0.5px;
-            ">
-                <div style="
-                    padding: 0 2rem;  /* Add padding to the text content */
-                    position: relative;
-                    height: 100%;
-                ">
-                    {content}
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Add read aloud controls
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            accent = st.selectbox(
-                "Voice Accent",
-                ["co.uk", "com", "com.au", "co.in", "ca"],
-                help="Select voice accent for text-to-speech",
-                key=f"accent_{hash(content)}"  # Unique key based on content
+            """Helper method to display content block with enhanced HTML formatting"""
+            # Create the container div with improved styling and header/footer handling
+            container_style = (
+                "background-color: #593163;"
+                "color: #FFFFFF;"
+                "padding: 2rem 3rem;" # Adjusted padding
+                "border-radius: 8px;"
+                "border: 1px solid #541680;"
+                "position: relative;" # Added for header/footer positioning
+                "box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);"
+                "font-family: Georgia, 'Times New Roman', serif;"
+                "font-size: 16px;"
+                "height: 800px;"
+                "width: 90%;"
+                "margin: 2rem auto;"
+                "position: relative;"
+                "min-height: 600px;"
+                "letter-spacing: 0.5px;"
             )
             
-            if st.button("🔊 Read Content", use_container_width=True, key=f"read_{hash(content)}"):
-                try:
-                    with st.spinner("Generating audio..."):
-                        # Create temp file with unique name
-                        temp_dir = tempfile.gettempdir()
-                        temp_file = os.path.join(temp_dir, f'content_{uuid.uuid4().hex}.mp3')
-                        
-                        try:
-                            # Clean up content for better text-to-speech
-                            clean_content = content.replace('\n', ' ').strip()
+            # Content container with improved structure
+            content_container_style = (
+                "padding: 1rem 2rem;"
+                "height: calc(100% - 4rem);" # Account for padding
+                "overflow-y: auto;"
+                "position: relative;"
+                "z-index: 1;"
+                "margin: 0 auto;" # Center content
+                "max-width: 100%;" # Prevent overflow
+                "scrollbar-width: thin;" # Thin scrollbar
+                "scrollbar-color: #541680 #593163;" # Styled scrollbar
+            )
+            
+            # Shadow effects for better visual hierarchy
+            shadow_styles = {
+                'right': (
+                    "position: absolute;"
+                    "top: 0;"
+                    "right: 0;"
+                    "width: 30px;"
+                    "height: 100%;"
+                    "background: linear-gradient(to left, rgba(89, 49, 99, 0.8), transparent);"
+                    "pointer-events: none;"
+                    "z-index: 2;"
+                ),
+                'bottom': (
+                    "position: absolute;"
+                    "bottom: 0;"
+                    "left: 0;"
+                    "right: 0;"
+                    "height: 30px;"
+                    "background: linear-gradient(to top, rgba(89, 49, 99, 0.8), transparent);"
+                    "pointer-events: none;"
+                    "z-index: 2;"
+                )
+            }
+
+            # Format the content with proper HTML structure
+            formatted_content = self.format_content_html(content)
+            
+            # Combine everything into the final HTML structure
+            html_content = """
+            <div style="{}">
+                <div style="{}">
+                    {}
+                </div>
+                <div style="{}"></div>
+                <div style="{}"></div>
+            </div>
+            """.format(
+                container_style,
+                content_container_style,
+                formatted_content,
+                shadow_styles['right'],
+                shadow_styles['bottom']
+            )
+            
+            # Render HTML content
+            st.markdown(html_content, unsafe_allow_html=True)
+            
+            # Add read aloud controls
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                accent = st.selectbox(
+                    "Voice Accent",
+                    ["co.uk", "com", "com.au", "co.in", "ca"],
+                    help="Select voice accent for text-to-speech",
+                    key=f"accent_{hash(content)}"
+                )
+                
+                if st.button("🔊 Read Content", use_container_width=True, key=f"read_{hash(content)}"):
+                    try:
+                        with st.spinner("Generating audio..."):
+                            temp_dir = tempfile.gettempdir()
+                            temp_file = os.path.join(temp_dir, f'content_{uuid.uuid4().hex}.mp3')
                             
-                            # Generate and save audio
-                            tts = gTTS(text=clean_content, lang='en', slow=False, tld=accent)
-                            tts.save(temp_file)
-                            
-                            # Play audio
-                            with open(temp_file, 'rb') as audio_file:
-                                audio_bytes = audio_file.read()
-                            st.audio(audio_bytes)
-                            
-                        finally:
-                            # Clean up temp file after a delay
                             try:
-                                time.sleep(1)
-                                if os.path.exists(temp_file):
-                                    os.remove(temp_file)
-                            except Exception:
-                                pass
+                                # Clean content for text-to-speech
+                                clean_content = self.clean_content_for_tts(content)
                                 
-                except Exception as e:
-                    st.error(f"Error generating audio: {str(e)}")
+                                tts = gTTS(text=clean_content, lang='en', slow=False, tld=accent)
+                                tts.save(temp_file)
+                                
+                                with open(temp_file, 'rb') as audio_file:
+                                    audio_bytes = audio_file.read()
+                                st.audio(audio_bytes)
+                                
+                            finally:
+                                try:
+                                    time.sleep(1)
+                                    if os.path.exists(temp_file):
+                                        os.remove(temp_file)
+                                except Exception:
+                                    pass
+                                    
+                    except Exception as e:
+                        st.error(f"Error generating audio: {str(e)}")
+
+    def format_content_html(self, content: str) -> str:
+            """Convert markdown content to formatted HTML with enhanced document structure"""
+            if not content:
+                return ""
+                
+            # Create a dictionary of document sections
+            document_sections = {
+                'header': [],
+                'content': [],
+                'footer': []
+            }
+            
+            # Split content into lines for processing
+            lines = content.split('\n')
+            section = 'content'  # Default section
+            
+            for line in lines:
+                # Skip empty lines
+                if not line.strip():
+                    continue
+                    
+                # Skip header/footer lines that contain document title or page numbers
+                if any(marker in line.lower() for marker in ['business plan', 'page', 'confidential']):
+                    continue
+                
+            try:
+                # Parse content structure
+                paragraphs = content.split('\n')
+                formatted_paragraphs = []
+                
+                # Track current context
+                in_list = False
+                list_items = []
+                in_code_block = False
+                code_lines = []
+                
+                for para in paragraphs:
+                    para = para.strip()
+                    if not para:
+                        continue
+                    
+                    # Handle headings
+                    if para.startswith('#'):
+                        level = len(para.split()[0])  # Count # symbols
+                        text = ' '.join(para.split()[1:])
+                        formatted_paragraphs.append(
+                            f'<h{level} style="color: #DFB6FF; font-size: {2.0-level*0.2}em; '
+                            f'margin: 1em 0; font-weight: bold;">{text}</h{level}>'
+                        )
+                        continue
+                    
+                    # Handle lists
+                    if para.startswith(('-', '*', '•')) or para.strip().startswith(('1.', '2.', '3.')):
+                        if not in_list:
+                            in_list = True
+                            list_items = []
+                        
+                        item_text = para.lstrip('- *•').strip()
+                        if para[0].isdigit():
+                            item_text = ' '.join(para.split()[1:])
+                        
+                        list_items.append(
+                            f'<li style="margin-bottom: 0.5em; line-height: 1.6;">{item_text}</li>'
+                        )
+                        continue
+                    
+                    # Close list if we're not in a list item anymore
+                    if in_list and not (para.startswith(('-', '*', '•')) or para[0].isdigit()):
+                        formatted_paragraphs.append(
+                            f'<ul style="margin-left: 2em; margin-bottom: 1em; list-style-type: disc;">'
+                            f'{"".join(list_items)}</ul>'
+                        )
+                        in_list = False
+                        list_items = []
+                    
+                    # Handle code blocks
+                    if para.startswith('```') or para.startswith('    '):
+                        if not in_code_block:
+                            in_code_block = True
+                            code_lines = []
+                        else:
+                            in_code_block = False
+                            code_content = '\n'.join(code_lines)
+                            formatted_paragraphs.append(
+                                f'<pre style="background-color: #2d1934; padding: 1em; '
+                                f'border-radius: 4px; overflow-x: auto; margin: 1em 0;">'
+                                f'<code>{code_content}</code></pre>'
+                            )
+                            code_lines = []
+                        continue
+                    
+                    if in_code_block:
+                        code_lines.append(para)
+                        continue
+                    
+                    # Regular paragraphs
+                    formatted_paragraphs.append(
+                        f'<p style="margin-bottom: 1em; text-align: justify; '
+                        f'line-height: 1.8; padding: 0.2em 0;">{para}</p>'
+                    )
+                
+                # Close any open structures
+                if in_list and list_items:
+                    formatted_paragraphs.append(
+                        f'<ul style="margin-left: 2em; margin-bottom: 1em; list-style-type: disc;">'
+                        f'{"".join(list_items)}</ul>'
+                    )
+                
+                if in_code_block and code_lines:
+                    code_content = '\n'.join(code_lines)
+                    formatted_paragraphs.append(
+                        f'<pre style="background-color: #2d1934; padding: 1em; '
+                        f'border-radius: 4px; overflow-x: auto; margin: 1em 0;">'
+                        f'<code>{code_content}</code></pre>'
+                    )
+                
+                return '\n'.join(formatted_paragraphs)
+                
+            except Exception as e:
+                st.error(f"Error formatting content: {str(e)}")
+                return f'<p style="color: red;">Error formatting content: {str(e)}</p>'
+
+    
+    def clean_content_for_tts(self, content: str) -> str:
+        """Clean content for text-to-speech by removing HTML tags and normalizing text"""
+        import re
+        
+        # Remove HTML tags
+        clean_text = re.sub(r'<[^>]+>', ' ', content)
+        
+        # Normalize whitespace
+        clean_text = ' '.join(clean_text.split())
+        
+        # Convert common symbols to words
+        replacements = {
+            '-': 'dash',
+            '*': 'bullet',
+            '•': 'bullet',
+            '|': 'separator',
+            '>': 'greater than',
+            '<': 'less than',
+            '=': 'equals',
+        }
+        
+        for symbol, word in replacements.items():
+            clean_text = clean_text.replace(symbol, f' {word} ')
+        
+        return clean_text
 
     def handle_qa_interface(self, book):
         """Q&A interface with optimized layout and controls"""

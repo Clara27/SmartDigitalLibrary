@@ -506,44 +506,115 @@ Please format the response with clear section headers and bullet points for read
             return False
     
     @staticmethod
-    def process_pdf(file_content: bytes, file_name: str, file_type: str) -> Tuple[bool, str, Optional[List[Dict]]]:
-        """Process the uploaded document and extract text"""
+    def process_pdf(file_content: bytes, file_name: str, file_type: str, chunk_size: int) -> Tuple[bool, str, Optional[List[Dict]]]:
         try:
+            documents = []
+            
             if file_type == "application/pdf":
                 # Process PDF using PyPDF2
                 pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
                 total_pages = len(pdf_reader.pages)
-                documents = []
 
-                # Process each page individually
                 for page_num in range(total_pages):
                     text = pdf_reader.pages[page_num].extract_text()
+                    # Format PDF content with page numbers
+                    formatted_text = f"## Page {page_num + 1}\n\n{text}"
                     documents.append({
                         "page_num": page_num + 1,
-                        "text": text
+                        "text": formatted_text
                     })
 
             elif file_type in ["application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]:
-                # Process Word document using python-docx
+                # Process Word document into chunks
                 doc = docx.Document(io.BytesIO(file_content))
-                if len(doc.paragraphs) == 0:
-                    documents = [{"text": ""}]
-                else:
-                    documents = [{"text": para.text, "page_num": i + 1} 
-                            for i, para in enumerate(doc.paragraphs) 
-                            if para.text.strip()]
+                current_chunk = []
+                current_length = 0
+                chunk_number = 1
+
+                for paragraph in doc.paragraphs:
+                    if not paragraph.text.strip():
+                        continue
+                    
+                    # Format text based on style
+                    text = paragraph.text.strip()
+                    style_name = paragraph.style.name.lower()
+
+                    if 'heading' in style_name:
+                        level = style_name[-1] if style_name[-1].isdigit() else '2'
+                        formatted_text = f"{'#' * int(level)} {text}"
+                    elif style_name == 'list paragraph':
+                        formatted_text = f"* {text}"
+                    else:
+                        formatted_text = text
+
+                    # Check if adding this paragraph would exceed chunk_size
+                    if current_length + len(formatted_text) >= chunk_size:
+                        if current_chunk:
+                            documents.append({
+                                "page_num": chunk_number,
+                                "text": "\n\n".join(current_chunk)
+                            })
+                            chunk_number += 1
+                            current_chunk = []
+                            current_length = 0
+
+                    current_chunk.append(formatted_text)
+                    current_length += len(formatted_text)
+
+                # Add any remaining content
+                if current_chunk:
+                    documents.append({
+                        "page_num": chunk_number,
+                        "text": "\n\n".join(current_chunk)
+                    })
 
             elif file_type == "text/plain":
-                # Process plain text file
-                text = file_content.decode("utf-8")
-                if not text.strip():
-                    documents = [{"text": ""}]
-                else:
-                    # Split text into pages based on newlines or some other criterion
-                    pages = text.split('\n\n')  # Split on double newlines
-                    documents = [{"text": page, "page_num": i + 1} 
-                            for i, page in enumerate(pages) 
-                            if page.strip()]
+                # Process plain text file with improved formatting
+                text_content = file_content.decode("utf-8")
+                lines = text_content.split('\n')
+                current_chunk = []
+                current_length = 0
+                chunk_number = 1
+
+                for line in lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    # Format text content
+                    if line.startswith('#'):
+                        # Preserve existing markdown headers
+                        formatted_text = line
+                    elif line.startswith('-') or line.startswith('*'):
+                        # Preserve list items
+                        formatted_text = line
+                    elif ':' in line and len(line.split(':')[0].split()) <= 3:
+                        # Convert section headers to markdown
+                        section, content = line.split(':', 1)
+                        formatted_text = f"### {section.strip()}\n{content.strip()}"
+                    else:
+                        formatted_text = line
+
+                    # Check chunk size
+                    if current_length + len(formatted_text) >= chunk_size:
+                        if current_chunk:
+                            documents.append({
+                                "page_num": chunk_number,
+                                "text": "\n\n".join(current_chunk)
+                            })
+                            chunk_number += 1
+                            current_chunk = []
+                            current_length = 0
+
+                    current_chunk.append(formatted_text)
+                    current_length += len(formatted_text)
+
+                # Add any remaining content
+                if current_chunk:
+                    documents.append({
+                        "page_num": chunk_number,
+                        "text": "\n\n".join(current_chunk)
+                    })
 
             else:
                 return False, f"Unsupported file type: {file_type}", None
@@ -552,6 +623,7 @@ Please format the response with clear section headers and bullet points for read
 
         except Exception as e:
             return False, f"Error processing document: {str(e)}", None
+    
     
     @staticmethod
     def check_document_exists(session: Session, filename: str) -> bool:

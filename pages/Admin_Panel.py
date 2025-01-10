@@ -332,10 +332,23 @@ class AdminPanel:
                                 progress_placeholder.empty()
                                 st.success(f"✅ Document '{selected_filename}' deleted successfully!")
                                 time.sleep(1)
+                                
+                                st.session_state.notifications.insert(0, {
+                                "type": "warning",
+                                "message": f"Document '{selected_filename}' has been deleted",
+                                "time": "Just now"
+                            })
+                            
+                                                
                                 st.rerun()
                                 
                             except Exception as e:
                                 st.error(f"Failed to delete from database: {str(e)}")
+                                st.session_state.notifications.insert(0, {
+                                "type": "error",
+                                "message": f"Failed to delete {selected_filename}: {str(e)}",
+                                "time": "Just now"
+                            })
                                 
                         except Exception as e:
                             st.error(f"Error during deletion: {str(e)}")

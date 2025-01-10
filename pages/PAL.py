@@ -116,9 +116,9 @@ class PAL:
                     margin: 0;
                     padding: 8px 0 0 0;
                     font-size: 49px;
-                    margin-top: -20px;
+                    margin-top: -40px;
                     font-weight: 800;
-                    background: linear-gradient(45deg, #E5B8F4, #C147E9);
+                    background: linear-gradient(45deg, #E5B8F4, #4B006E);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                     background-clip: text;'>

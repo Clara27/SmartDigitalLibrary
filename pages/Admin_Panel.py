@@ -436,7 +436,16 @@ class AdminPanel:
                     </div>
                 """, unsafe_allow_html=True)
 
-       
+    def _get_icon(self, notification_type):
+        """Get icon for notification type"""
+        icons = {
+            "info": "ℹ️",
+            "success": "✅",
+            "warning": "⚠️",
+            "error": "❌"
+        }
+        return icons.get(notification_type, "🔔")
+        
         
     
     def run(self):

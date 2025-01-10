@@ -164,11 +164,14 @@ class PDFLibraryApp:
         with header_cols[1]:
             st.markdown("""                 
                 <div style="                     
-                    position: flex;                      
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);                    
-                    text-align: center;                     
+                    display: flex;                      
+                    flex-direction: column;                      
+                    align-items: flex-start;                      
+                    gap: 10px;                      
+                    margin-top: -50px;                     
+                    margin-left: -10px;                     
+                    margin-right: 300px;                     
+                    align-items: center;                     
                     padding: 10px 0;">                     
                     <h1 style="                         
                         margin: 0;                          
@@ -188,7 +191,7 @@ class PDFLibraryApp:
                         font-size: 20px;                          
                         font-weight: 350;                          
                         line-height: 1.4;                         
-                        margin-top: 10px;                          
+                        margin-left:10px;                          
                         color: #F7E7CE;">                         
                         Streamline Your Files, Empower Your Knowledge.                     
                     </h2>                 

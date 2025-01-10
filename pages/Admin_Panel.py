@@ -335,7 +335,7 @@ class AdminPanel:
                                 
                                 st.session_state.notifications.insert(0, {
                                 "type": "warning",
-                                "message": f"Document '{selected_filename}' has been deleted",
+                                "message": f"Document '{book_to_delete}' has been deleted",
                                 "time": "Just now"
                             })
                             
@@ -346,7 +346,7 @@ class AdminPanel:
                                 st.error(f"Failed to delete from database: {str(e)}")
                                 st.session_state.notifications.insert(0, {
                                 "type": "error",
-                                "message": f"Failed to delete {selected_filename}: {str(e)}",
+                                "message": f"Failed to delete {book_to_delete}: {str(e)}",
                                 "time": "Just now"
                             })
                                 

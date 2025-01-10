@@ -268,7 +268,8 @@ class AdminPanel:
                                             "type": "success",
                                             "message": f"Successfully uploaded {item['file'].name}",
                                             "time": "Just now"
-                                            
+                                        })
+
                                             st.rerun()
                                         else:
                                             status_placeholder.error(f"Failed to upload {item['file'].name}")

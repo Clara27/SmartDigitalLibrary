@@ -168,7 +168,7 @@ class PDFLibraryApp:
                     flex-direction: column;                      
                     align-items: flex-start;                      
                     gap: 2px;                      
-                    margin-top: -10px;                     
+                    margin-top: -20px;                     
                     margin-left: -10px;                     
                     margin-right: 300px;                     
                     align-items: center;                     
@@ -180,7 +180,7 @@ class PDFLibraryApp:
                         font-weight: 620;                          
                         line-height: 1.0;                          
                         color:#86608E;                          
-                        background: linear-gradient(45deg, #9b4dca, #6772e5);                          
+                        background: linear-gradient(53deg, #E5B8F4, #C147E9);                          
                         -webkit-background-clip: text;                          
                         -webkit-text-fill-color: transparent;">                         
                         Personal AI Library                     

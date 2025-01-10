@@ -167,7 +167,7 @@ class PDFLibraryApp:
                     display: flex;                      
                     flex-direction: column;                      
                     align-items: flex-start;                      
-                    gap: 10px;                      
+                    gap: 2px;                      
                     margin-top: -10px;                     
                     margin-left: -10px;                     
                     margin-right: 300px;                     

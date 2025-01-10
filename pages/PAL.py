@@ -15,7 +15,7 @@ class PAL:
             f"""
             <style>
                 .stApp {{
-                    background-image: url("https://i.postimg.cc/L4yW5ZDv/Pal-background.png");
+                    background-image: url("https://i.postimg.cc/pTQtHfmx/Pal-Background.png");
                     background-size: cover;
                     background-repeat: no-repeat;
                     background-attachment: fixed;
@@ -116,7 +116,7 @@ class PAL:
                     margin: 0;
                     padding: 8px 0 0 0;
                     font-size: 49px;
-                    margin-top: -30px;
+                    margin-top: -20px;
                     font-weight: 800;
                     background: linear-gradient(45deg, #E5B8F4, #C147E9);
                     -webkit-background-clip: text;

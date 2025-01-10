@@ -164,41 +164,40 @@ class PDFLibraryApp:
         with header_cols[1]:
             st.markdown("""
                 <div style="
-                    display: flex; 
-                    flex-direction: column; 
-                    align-items: flex-start; 
-                    gap: 10px; 
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: clamp(5px, 1vw, 10px);
                     margin-top: -50px;
                     margin-left: -10px;
                     margin-right: 300px;
                     align-items: center;
                     padding: 10px 0;">
+                    
                     <h1 style="
-                        margin: 0; 
-                        padding: 0; 
-                        font-size: 55px; 
-                        font-weight: 700; 
-                        line-height: 1.2; 
-                        color:#86608E; 
-                        background: linear-gradient(45deg, #9b4dca, #6772e5); 
-                        -webkit-background-clip: text; 
+                        margin: 0;
+                        padding: 0;
+                        font-size: clamp(30px, 5vw, 55px);
+                        font-weight: 600;
+                        line-height: 1.1;
+                        background: linear-gradient(45deg, #9b4dca, #6772e5);
+                        -webkit-background-clip: text;
                         -webkit-text-fill-color: transparent;">
                         Personal AI Library
                     </h1>
+                    
                     <h2 style="
-                        margin: 0; 
-                        padding: 0; 
-                        font-size: 20px; 
-                        font-weight: 350; 
+                        margin: 0;
+                        padding: 0;
+                        font-size: clamp(16px, 2vw, 20px);
+                        font-weight: 350;
                         line-height: 1.4;
-                        margin-left:10px; 
+                        margin-left: 10px;
                         color: #F7E7CE;">
                         Streamline Your Files, Empower Your Knowledge.
                     </h2>
                 </div>
-                """, 
-                unsafe_allow_html=True
-            )
+            """, unsafe_allow_html=True)
                    
        
         st.markdown("""

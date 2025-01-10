@@ -133,6 +133,8 @@ class AdminPanel:
             st.session_state.queue_processing = False
         if 'files' not in st.session_state:
             st.session_state.files = []
+        if 'notifications' not in st.session_state:
+            st.session_state.notifications = []
             
     def render_upload_interface(self):
         st.header("📚 Library Management")
@@ -176,6 +178,13 @@ class AdminPanel:
                                     'status': 'queued',
                                     'progress': 0,
                                     'message': 'Waiting in queue'
+                                })
+                                
+                                 # Add notification for file added to queue
+                                st.session_state.notifications.insert(0, {
+                                    "type": "info",
+                                    "message": f"Added {file.name} to queue",
+                                    "time": "Just now"
                                 })
                                 
                                 new_file = {
@@ -254,10 +263,21 @@ class AdminPanel:
                                             status_placeholder.success(f"✅ {item['file'].name} successfully added!")
                                             item['status'] = 'completed'
                                             item['progress'] = 100
+                                            
+                                            st.session_state.notifications.insert(0, {
+                                            "type": "success",
+                                            "message": f"Successfully uploaded {item['file'].name}",
+                                            "time": "Just now"
+                                            
                                             st.rerun()
                                         else:
                                             status_placeholder.error(f"Failed to upload {item['file'].name}")
                                             item['status'] = 'failed'
+                                            st.session_state.notifications.insert(0, {
+                                            "type": "error",
+                                            "message": f"Failed to upload {item['file'].name}",
+                                            "time": "Just now"
+                                        })
                                     else:
                                         status_placeholder.error(f"Failed to process {item['file'].name}: {error_msg}")
                                         item['status'] = 'failed'
@@ -352,21 +372,56 @@ class AdminPanel:
             )
     
     def render_notifications(self):
-        with st.container():
-            st.markdown(
-                """
-                <div class="notification-box">
-                    <h3>🔔 Notifications</h3>
-                    <div id="notifications"></div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        
-        notification_container = st.empty()
-        
-        notifications = []
-        
+        """Render the notification panel"""
+        st.markdown("""
+            <style>
+                .notification-card {
+                    background-color: rgba(49, 24, 71, 0.9);
+                    border-left: 4px solid;
+                    padding: 10px;
+                    margin: 5px 0;
+                    border-radius: 4px;
+                }
+                .notification-info { border-left-color: #3498db; }
+                .notification-success { border-left-color: #2ecc71; }
+                .notification-warning { border-left-color: #f1c40f; }
+                .notification-error { border-left-color: #e74c3c; }
+                .notification-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .notification-time {
+                    font-size: 0.8em;
+                    color: #95a5a6;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+
+        # Header with Clear All button
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown("🔔 Recent Notifications")
+        with col2:
+            if st.button("Clear All", type="secondary"):
+                st.session_state.notifications = []
+                st.rerun()
+
+        # Display notifications from session state
+        if not st.session_state.notifications:
+            st.info("No notifications yet")
+        else:
+            # Show last 5 notifications
+            for notification in st.session_state.notifications[:5]:
+                st.markdown(f"""
+                    <div class="notification-card notification-{notification['type']}">
+                        <div class="notification-header">
+                            <span>{self._get_icon(notification['type'])} {notification['message']}</span>
+                            <span class="notification-time">{notification['time']}</span>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
         def display_notification(message, notification_type="info"):
             if notification_type == "info":
                 st.info(message)

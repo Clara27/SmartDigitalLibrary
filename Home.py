@@ -164,7 +164,7 @@ class PDFLibraryApp:
         with header_cols[1]:
             st.markdown("""                 
                 <div style="                     
-                    position: fixed;                      
+                    position: flex;                      
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);                    

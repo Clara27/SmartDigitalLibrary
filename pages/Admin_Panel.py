@@ -423,33 +423,7 @@ class AdminPanel:
                     </div>
                 """, unsafe_allow_html=True)
 
-        def display_notification(message, notification_type="info"):
-            if notification_type == "info":
-                st.info(message)
-            elif notification_type == "warning":
-                st.warning(message)
-            elif notification_type == "error":
-                st.error(message)
-            elif notification_type == "success":
-                st.success(message)
-        
-        def trigger_notification(message, notification_type="info"):
-            notifications.append({"message": message, "type": notification_type})
-            
-            top_notifications = notifications[-5:]
-            
-            with notification_container:
-                for notification in top_notifications:
-                    display_notification(notification["message"], notification["type"])
-        
-        trigger_notification("Document uploaded successfully!", "success")
-        trigger_notification("User logged in.", "info")
-        trigger_notification("System error occurred.", "error")
-        trigger_notification("Backup completed.", "success")
-        trigger_notification("User accessed a document.", "info")
-        trigger_notification("Another notification.", "info")
-        
-        
+       
         
     
     def run(self):

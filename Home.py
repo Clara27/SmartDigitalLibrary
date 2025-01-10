@@ -177,8 +177,8 @@ class PDFLibraryApp:
                         margin: 0;                          
                         padding: 0;                          
                         font-size: 55px;                          
-                        font-weight: 600;                          
-                        line-height: 1.1;                          
+                        font-weight: 700;                          
+                        line-height: 1.0;                          
                         color:#86608E;                          
                         background: linear-gradient(45deg, #9b4dca, #6772e5);                          
                         -webkit-background-clip: text;                          
@@ -197,6 +197,7 @@ class PDFLibraryApp:
                     </h2>                 
                 </div>                 
             """, unsafe_allow_html=True)
+  
                    
        
         st.markdown("""

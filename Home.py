@@ -168,7 +168,7 @@ class PDFLibraryApp:
                     flex-direction: column;                      
                     align-items: flex-start;                      
                     gap: 2px;                      
-                    margin-top: -20px;                     
+                    margin-top: -25px;                     
                     margin-left: -10px;                     
                     margin-right: 300px;                     
                     align-items: center;                     
@@ -176,8 +176,8 @@ class PDFLibraryApp:
                     <h1 style="                         
                         margin: 0;                          
                         padding: 0;                          
-                        font-size: 55px;                          
-                        font-weight: 620;                          
+                        font-size: 52px;                          
+                        font-weight: 600;                          
                         line-height: 1.0;                          
                         color: #4B006E;                          
                         background: linear-gradient(45deg, #4B006E, #9b4dca);                          

@@ -180,7 +180,7 @@ class PDFLibraryApp:
                         font-weight: 620;                          
                         line-height: 1.0;                          
                         color: #4B006E;                          
-                        background: linear-gradient(45deg, #9b4dca, #6772e5);                          
+                        background: linear-gradient(45deg, #9b4dca, #4B006E);                          
                         -webkit-background-clip: text;                          
                         -webkit-text-fill-color: transparent;">                         
                         Personal AI Library                     

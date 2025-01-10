@@ -162,51 +162,38 @@ class PDFLibraryApp:
             )
         
         with header_cols[1]:
-         st.markdown("""
-            <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                background: rgba(0, 0, 0, 0.9);
-                z-index: 1000;">
-                
-                <div style="
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: clamp(10px, 2vh, 30px);
-                    text-align: center;
-                    padding: 20px;">
-                    
-                    <h1 style="
-                        margin: 0;
-                        padding: 0;
-                        font-size: clamp(30px, 5vw, 55px);
-                        font-weight: 600;
-                        line-height: 1.1;
-                        background: linear-gradient(45deg, #9b4dca, #6772e5);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;">
-                        Personal AI Library
-                    </h1>
-                    
-                    <h2 style="
-                        margin: 0;
-                        padding: 0;
-                        font-size: clamp(16px, 2vw, 20px);
-                        font-weight: 350;
-                        line-height: 1.4;
-                        color: #F7E7CE;">
-                        Streamline Your Files, Empower Your Knowledge.
-                    </h2>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+            st.markdown("""                 
+                <div style="                     
+                    position: fixed;                      
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);                    
+                    text-align: center;                     
+                    padding: 10px 0;">                     
+                    <h1 style="                         
+                        margin: 0;                          
+                        padding: 0;                          
+                        font-size: 55px;                          
+                        font-weight: 600;                          
+                        line-height: 1.1;                          
+                        color:#86608E;                          
+                        background: linear-gradient(45deg, #9b4dca, #6772e5);                          
+                        -webkit-background-clip: text;                          
+                        -webkit-text-fill-color: transparent;">                         
+                        Personal AI Library                     
+                    </h1>                     
+                    <h2 style="                         
+                        margin: 0;                          
+                        padding: 0;                          
+                        font-size: 20px;                          
+                        font-weight: 350;                          
+                        line-height: 1.4;                         
+                        margin-top: 10px;                          
+                        color: #F7E7CE;">                         
+                        Streamline Your Files, Empower Your Knowledge.                     
+                    </h2>                 
+                </div>                 
+            """, unsafe_allow_html=True)
                    
        
         st.markdown("""

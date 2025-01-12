@@ -1037,14 +1037,35 @@ Please format the response with clear section headers and bullet points for read
             )
 
             print("Calling cortex_search_service.search")
-            resp = cortex_search_service.search(
-                query=query,
-                columns=["CONTENT","FILENAME","METADATA"],
-                limit=limit,
-            )
+            search_params = {
+                "query": query,
+                "columns": ["CONTENT", "FILENAME", "METADATA"],
+                "limit": limit,
+                "similarity_threshold": 0.5  # Lower threshold for better recall
+            }
 
             # print(f"Search query: {query}")
             # print(f"Found {len(resp.results) if resp.results else 0} results")
+            if filename:
+                #search_params["filters"] = "FILENAME = '{}'".format(safe_filename)
+                filters = "FILENAME = '{}'".format(safe_filename)
+                
+            print(f"Debug - Executing search with query: {query}")
+            print(f"Debug - Search parameters: {search_params}")
+            print(f"Debug - Filters: {filters}")
+            
+            # Execute search
+            resp = cortex_search_service.search(**search_params, filters=filters)
+            
+            # Debug search results
+            if resp.results:
+                print(f"Debug - Found {len(resp.results)} results")
+                for idx, result in enumerate(resp.results):
+                    print(f"Debug - Result {idx + 1} preview: {result['CONTENT'][:100]}...")
+                
+            # Execute search using cortex service
+           # resp = cortex_search_service.search(**search_params)
+
 
             if not resp.results:
                 return {'answer': 'No relevant results found.', 'sources': [], 'raw_results': []}

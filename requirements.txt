@@ -45,5 +45,6 @@ python-dotenv>=1.0.0
 # Utilities
 uuid>=1.30
 python-json-logger>=2.0.7
+streamlit-pdf-viewer>=0.0.20
 ffmpeg-python>=0.2.0
 

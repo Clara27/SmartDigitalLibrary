@@ -21,6 +21,7 @@ from truelens_utils import TruLensEvaluator
 import os
 import tempfile
 from gtts import gTTS
+from streamlit_pdf_viewer import pdf_viewer 
 
 
   
@@ -154,50 +155,51 @@ class PDFLibraryApp:
         with header_cols[0]:
             st.markdown(
                 """
-                <div style="margin-top: -50px; text-align: left;">
-                    <img src="https://i.postimg.cc/cJrXGrxd/PALicon.png" width="130">
+                <div style="margin-top: -40px; text-align: left;">
+                    <img src="https://i.postimg.cc/cJrXGrxd/PALicon.png" width="150">
                 </div>
                 """,
                 unsafe_allow_html=True
             )
         
         with header_cols[1]:
-            st.markdown("""                 
-                <div style="                     
-                    display: flex;                      
-                    flex-direction: column;                      
-                    align-items: flex-start;                      
-                    gap: 2px;                      
-                    margin-top: -25px;                     
-                    margin-left: -10px;                     
-                    margin-right: 300px;                     
-                    align-items: center;                     
-                    padding: 10px 0;">                     
-                    <h1 style="                         
-                        margin: 0;                          
-                        padding: 0;                          
-                        font-size: 52px;                          
-                        font-weight: 600;                          
-                        line-height: 1.0;                          
-                        color: #4B006E;                          
-                        background: linear-gradient(45deg, #4B006E, #9b4dca);                          
-                        -webkit-background-clip: text;                          
-                        -webkit-text-fill-color: transparent;">                         
-                        Personal AI Library                     
-                    </h1>                     
-                    <h2 style="                         
-                        margin: 0;                          
-                        padding: 0;                          
-                        font-size: 22px;                          
-                        font-weight: 350;                          
-                        line-height: 1.4;                         
-                        margin-left:10px;                          
-                        color: #F7E7CE;">                         
-                        Streamline Your Files, Empower Your Knowledge.                     
-                    </h2>                 
-                </div>                 
-            """, unsafe_allow_html=True)
-  
+            st.markdown("""
+                <div style="
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: flex-start; 
+                    gap: 10px; 
+                    margin-top: -50px;
+                    margin-left: -10px;
+                    margin-right: 300px;
+                    align-items: center;
+                    padding: 10px 0;">
+                    <h1 style="
+                        margin: 0; 
+                        padding: 0; 
+                        font-size: 55px; 
+                        font-weight: 700; 
+                        line-height: 1.2; 
+                        color:#86608E; 
+                        background: linear-gradient(45deg, #9b4dca, #6772e5); 
+                        -webkit-background-clip: text; 
+                        -webkit-text-fill-color: transparent;">
+                        Personal AI Library
+                    </h1>
+                    <h2 style="
+                        margin: 0; 
+                        padding: 0; 
+                        font-size: 28px; 
+                        font-weight: 500; 
+                        line-height: 1.4;
+                        margin-left:30px; 
+                        color: #F7E7CE;">
+                        Streamline Your Files, Empower Your Knowledge.
+                    </h2>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
                    
        
         st.markdown("""
@@ -442,10 +444,12 @@ class PDFLibraryApp:
         #     placeholder="Enter your Mistral API key here..."
         # )
         
-        api_key = st.secrets["MISTRAL_API_KEY"]
+        api_key = st.secrets.MISTRAL_API_KEY
+        #api_key = st.secrets["MISTRAL_API_KEY"]
         
         # Validate API key only when it changes
         if api_key != st.session_state.mistral_api_key:
+            
             st.session_state.mistral_api_key = api_key
             
             if api_key:
@@ -503,119 +507,163 @@ class PDFLibraryApp:
             ]
             return matching_books
         finally:
-            session.close()
+            session.close() 
+            
+    @staticmethod
+    def wrapper_pdf_viewer(
+        binary_content: bytes,
+        width: int = 800,
+        enable_text: bool = True,
+        pages_vertical_spacing: int = 2,
+        resolution_boost: int = 1,
+        annotation_outline_size: int = 1
+    ) -> None:
+        """
+        PDF viewer with enhanced controls and consistent styling.
+        
+        Args:
+            binary_content: Raw bytes of the PDF file
+            width: Display width in pixels
+            enable_text: Whether to enable text selection
+            pages_vertical_spacing: Space between pages in pixels
+            resolution_boost: Quality multiplier for rendering
+            annotation_outline_size: Thickness of annotation borders in pixels
+        """
+        try:
+            from streamlit_pdf_viewer import pdf_viewer
+            pdf_viewer(
+                input=binary_content,
+                width=width,
+                pages_vertical_spacing=pages_vertical_spacing,
+                annotation_outline_size=annotation_outline_size,
+                render_text=enable_text,
+                resolution_boost=resolution_boost
+            )
+        except Exception as e:
+            st.error(f"Error displaying PDF: {str(e)}")
+            print(f"PDF viewer error details: {str(e)}")
 
     def render_document_reader(self, book):
-            """Add reading functionality to book details with dark mode"""
-            session = SnowparkManager.get_session()
-            if not session:
-                st.error("Could not establish database connection.")
-                return
+        """Document reader with support for different file types"""
+        session = SnowparkManager.get_session()
+        if not session:
+            st.error("Could not establish database connection.")
+            return
 
-            try:
-                # Get all pages of the document in order
-                query = f"""
-                SELECT 
-                    CONTENT,
-                    METADATA:page_number::INTEGER as PAGE_NUMBER
-                FROM RAG_DOCUMENTS_TMP
-                WHERE FILENAME = '{book['name'].replace("'", "''")}'
-                ORDER BY PAGE_NUMBER
-                """
-                results = session.sql(query).collect()
+        try:
+            # First get the document type from RAG_DOCUMENTS_TMP
+            type_query = f"""
+            SELECT DISTINCT FILE_TYPE
+            FROM {SnowparkManager.RAG_TABLE}
+            WHERE FILENAME = '{book['name'].replace("'", "''")}'
+            LIMIT 1
+            """
+            type_result = session.sql(type_query).collect()
+            
+            if not type_result:
+                st.error("Document type not found.")
+                return
                 
-                if not results:
+            file_type = type_result[0]['FILE_TYPE']
+            print(f"Document type: {file_type}")  # Debug print
+            
+            # Common sidebar controls
+            with st.sidebar:
+                st.header("Document Settings")
+                width = st.slider(
+                    "Viewer Width",
+                    min_value=400,
+                    max_value=1200,
+                    value=1200
+                )
+            
+            if file_type == 'application/pdf':
+                # For PDFs, get binary content from RAG_METADATA
+                pdf_query = f"""
+                SELECT BINARY_CONTENT
+                FROM RAG_METADATA
+                WHERE FILENAME = '{book['name'].replace("'", "''")}'
+                LIMIT 1
+                """
+                pdf_result = session.sql(pdf_query).collect()
+                
+                if not pdf_result or not pdf_result[0]['BINARY_CONTENT']:
+                    st.warning("PDF content not found.")
+                    return
+                    
+                binary_content = bytes(pdf_result[0]['BINARY_CONTENT'])
+                
+                # PDF-specific controls
+                with st.sidebar:
+                    enable_text = st.checkbox(
+                        'Enable Text Selection', 
+                        value=True,
+                        help="Allow text selection and copy-paste"
+                    )
+                    
+                    pages_vertical_spacing = st.slider(
+                        "Page Spacing",
+                        min_value=0,
+                        max_value=10,
+                        value=2
+                    )
+                    
+                    resolution_boost = st.slider(
+                        "Resolution Quality",
+                        min_value=1,
+                        max_value=10,
+                        value=1
+                    )
+                
+                # Display PDF using viewer
+                self.wrapper_pdf_viewer(
+                    binary_content=binary_content,
+                    width=width,
+                    enable_text=enable_text,
+                    pages_vertical_spacing=pages_vertical_spacing,
+                    resolution_boost=resolution_boost
+                )
+                
+            elif file_type in ['text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
+                # For non-PDF documents, get content from RAG_DOCUMENTS_TMP
+                content_query = f"""
+                SELECT CONTENT
+                FROM {SnowparkManager.RAG_TABLE}
+                WHERE FILENAME = '{book['name'].replace("'", "''")}'
+                ORDER BY METADATA:chunk_number
+                """
+                content_result = session.sql(content_query).collect()
+                
+                if not content_result:
                     st.warning("No content found for this document.")
                     return
-
-                # Initialize page numbers and navigation
-                total_pages = len(results)
-                slider_key = f"page_slider_{book['name']}"
-                view_mode_key = f"view_mode_{book['name']}"
                 
-                # Initialize session state for page number if not exists
-                if slider_key not in st.session_state:
-                    st.session_state[slider_key] = 1
-                    
-                # Initialize view mode if not exists
-                if view_mode_key not in st.session_state:
-                    st.session_state[view_mode_key] = "Single Page"
+                # Combine all chunks into a single text
+                full_content = '\n\n'.join([row['CONTENT'] for row in content_result])
                 
-                # Navigation controls at the top
-                col1, col2, col3 = st.columns([2, 3, 2])
-                
-                with col1:
-                    st.write(f"Total Pages: {total_pages}")
-                    # Add view mode selector
-                    view_mode = st.radio(
-                        "View Mode",
-                        ["Single Page", "Full Document"],
-                        key=view_mode_key
+                # Text document controls
+                with st.sidebar:
+                    font_size = st.slider(
+                        "Font Size",
+                        min_value=12,
+                        max_value=24,
+                        value=16
                     )
                 
-                with col2:
-                    # Only show page selector in single page mode
-                    if view_mode == "Single Page":
-                        current_page = st.selectbox(
-                            "Select Page",
-                            options=list(range(1, total_pages + 1)),
-                            index=st.session_state[slider_key] - 1,
-                            key=f"page_select_{book['name']}"
-                        )
-                        # Update session state for page number
-                        st.session_state[slider_key] = current_page
+                # Display the content using display_content_block
+                self.display_content_block(full_content)
                 
-                with col3:
-                    if view_mode == "Single Page":
-                        st.write(f"Current Page: {st.session_state[slider_key]}")
+            else:
+                st.warning(f"Unsupported file type: {file_type}")
 
-                # Display content based on view mode
-                st.markdown("---")
-                st.markdown("### 📖 Document Content")
-
-                if view_mode == "Single Page":
-                    # Display single page content
-                    current_content = next(
-                        (row['CONTENT'] for row in results if row['PAGE_NUMBER'] == st.session_state[slider_key]),
-                        "Content not found for this page."
-                    )
-                    self.display_content_block(current_content)
-
-                    # Navigation controls for single page mode
-                    if total_pages > 1:
-                        col1, col2, col3 = st.columns([1, 3, 1])
-                        
-                        with col1:
-                            if st.session_state[slider_key] > 1:
-                                if st.button("◀️ Previous", key=f"prev_{book['name']}", use_container_width=True):
-                                    st.session_state[slider_key] = st.session_state[slider_key] - 1
-                                    st.rerun()
-                        
-                        with col2:
-                            progress = (st.session_state[slider_key] - 1) / (total_pages - 1) if total_pages > 1 else 1
-                            st.progress(progress, text=f"Reading Progress: {progress*100:.1f}%")
-                        
-                        with col3:
-                            if st.session_state[slider_key] < total_pages:
-                                if st.button("Next ▶️", key=f"next_{book['name']}", use_container_width=True):
-                                    st.session_state[slider_key] = st.session_state[slider_key] + 1
-                                    st.rerun()
-                else:
-                    # Display full document content
-                    full_content = "\n\n--- Page Break ---\n\n".join(
-                        f"Page {row['PAGE_NUMBER']}:\n{row['CONTENT']}"
-                        for row in sorted(results, key=lambda x: x['PAGE_NUMBER'])
-                    )
-                    self.display_content_block(full_content)
-
-            except Exception as e:
-                st.error(f"Error loading document: {str(e)}")
-                st.write("Debug info:", {
-                    "book_name": book['name'],
-                    "error_type": type(e).__name__,
-                    "error_details": str(e)
-                })
-            finally:
+        except Exception as e:
+            st.error(f"Error in document reader: {str(e)}")
+            print(f"Document reader error details: {str(e)}")
+            import traceback
+            traceback.print_exc()
+        
+        finally:
+            if session:
                 session.close()
 
 
@@ -851,12 +899,15 @@ class PDFLibraryApp:
 
                             if not SnowparkManager.ensure_table_exists(session):
                                 return
-                            chunk_size = SnowparkManager.CHUNK_SIZE_OPTIONS["Medium"]   
+                            
+                            # Get the file content
+                            file_content = uploaded_file.read()
+                            chunk_size = SnowparkManager.CHUNK_SIZE_OPTIONS["Medium"]       
                             success, error_msg, documents = SnowparkManager.process_pdf(
-                                uploaded_file.read(), 
-                                uploaded_file.name, 
-                                uploaded_file.type,
-                                chunk_size
+                                file_content=file_content,  # Pass as named parameter
+                                filename=uploaded_file.name,
+                                file_type=uploaded_file.type,
+                                chunk_size=chunk_size
                             )
 
                             if success:
@@ -866,7 +917,8 @@ class PDFLibraryApp:
                                     documents,
                                     uploaded_file.name,
                                     uploaded_file.type,
-                                    st.session_state.mistral_api_key
+                                    st.session_state.mistral_api_key,
+                                    file_content
                                 )
                                 
                                 if upload_success:
@@ -1004,7 +1056,7 @@ class PDFLibraryApp:
             )
             max_tokens = st.slider(
                 "Summary Length", 
-                500, 1000, 750,
+                500, 2000, 1000,
                 help="Control the length of the summary"
             )
         with col2:
@@ -1073,41 +1125,7 @@ class PDFLibraryApp:
                                 st.write(f"- **Style**: {style}")
                                 st.write(f"- **Format**: {format_type}")
                                 st.write(f"- **Length**: {len(summary['summary'].split())} words")
-                                # print("before calling evaluate_rag_pipeline from handle_summary_generation function")
-                                # Evaluate quality if TruLens is available
-                                # if (hasattr(st.session_state, 'trulens_evaluator') and 
-                                #         st.session_state.trulens_evaluator and 
-                                #         st.session_state.trulens_evaluator.initialized):
-                                        
-                                #         eval_results = st.session_state.trulens_evaluator.evaluate_rag_pipeline(
-                                #             query="Generate a summary of this document",
-                                #             response=summary['summary'],
-                                #             contexts=contexts,
-                                #             operation_type="SUMMARY",
-                                #             style=style,
-                                #             format_type=format_type,
-                                #             output_token_count=max_tokens
-                                #         )
-                                # print("after calling evaluate_rag_pipeline from handle_summary_generation front.py ")
-                                # Display metrics if available
-                                # if eval_results and eval_results.get('summary'):
-                                #     st.markdown("### 📊 Quality Metrics")
-                                #     st.markdown(eval_results['summary'])
-
-                                #     # Update style metrics
-                                #     update_query = f"""
-                                #     UPDATE TESTDB.MYSCHEMA.TRULENS_METRICS
-                                #     SET STYLE = '{style}',
-                                #         FORMAT_TYPE = '{format_type}',
-                                #         OUTPUT_TOKEN_COUNT = {max_tokens}
-                                #     WHERE METRIC_ID = (
-                                #         SELECT METRIC_ID 
-                                #         FROM TESTDB.MYSCHEMA.TRULENS_METRICS 
-                                #         ORDER BY TIMESTAMP DESC 
-                                #         LIMIT 1
-                                #     )
-                                #     """
-                                #     session.sql(update_query).collect()
+                               
 
                         else:
                             st.error("Failed to generate summary")
@@ -1172,27 +1190,6 @@ class PDFLibraryApp:
             </style>
             """
             st.markdown(tab_style, unsafe_allow_html=True)
-        
-        
-        #     # Create tabs for different functions with larger font size
-        # tab_style = """
-        # <style>
-        # .stTabs [data-baseweb="tab-list"] button {
-        #     width: 150px;
-        #     padding: 8px 16px;
-        #     font-size: 18px;
-        #     background-color: #3B0B59;
-        #     color:rgb(234, 229, 229);
-        #     border-radius: 4px;
-        #     margin-right: 8px;
-        # }
-        # .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        #     font-size: 18px;
-        #     font-weight: bold;
-        # }
-        # </style>
-        # """
-        # st.markdown(tab_style, unsafe_allow_html=True)
        
         # Create tabs for different functions
         read_tab, summary_tab, qa_tab = st.tabs(["📚 Read", "📝 Summary", "❓ Q&A"])
@@ -1312,146 +1309,97 @@ class PDFLibraryApp:
                         except Exception as e:
                             st.error(f"Search error: {str(e)}")
                             print(f"Search error details: {str(e)}")
+                                                     
                             
-    # def on_read_click(self,book):
-    #     """Handle click events for reading a book"""
-    #     if not book:
-    #         st.error("No book selected")
-    #         return
             
-    #     # Update session state
-    #     st.session_state.selected_book = book
-    #     st.session_state.current_view = "details"
-        
-    #     # Store book details for reference
-    #     if 'current_book_details' not in st.session_state:
-    #         st.session_state.current_book_details = {}
-            
-    #     st.session_state.current_book_details = {
-    #         'name': book.get('name', ''),
-    #         'category': book.get('category', ''),
-    #         'date_added': book.get('date_added', ''),
-    #         'size': book.get('size', '')
-    #     }
-        
-    def display_content_block(self, content):
-            """Helper method to display content block with enhanced HTML formatting"""
-            # Create the container div with improved styling and header/footer handling
-            container_style = (
-                "background-color: #593163;"
-                "color: #FFFFFF;"
-                "padding: 2rem 3rem;" # Adjusted padding
-                "border-radius: 8px;"
-                "border: 1px solid #541680;"
-                "position: relative;" # Added for header/footer positioning
-                "box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);"
-                "font-family: Georgia, 'Times New Roman', serif;"
-                "font-size: 16px;"
-                "height: 800px;"
-                "width: 90%;"
-                "margin: 2rem auto;"
-                "position: relative;"
-                "min-height: 600px;"
-                "letter-spacing: 0.5px;"
-            )
-            
-            # Content container with improved structure
-            content_container_style = (
-                "padding: 1rem 2rem;"
-                "height: calc(100% - 4rem);" # Account for padding
-                "overflow-y: auto;"
-                "position: relative;"
-                "z-index: 1;"
-                "margin: 0 auto;" # Center content
-                "max-width: 100%;" # Prevent overflow
-                "scrollbar-width: thin;" # Thin scrollbar
-                "scrollbar-color: #541680 #593163;" # Styled scrollbar
-            )
-            
-            # Shadow effects for better visual hierarchy
-            shadow_styles = {
-                'right': (
-                    "position: absolute;"
-                    "top: 0;"
-                    "right: 0;"
-                    "width: 30px;"
-                    "height: 100%;"
-                    "background: linear-gradient(to left, rgba(89, 49, 99, 0.8), transparent);"
-                    "pointer-events: none;"
-                    "z-index: 2;"
-                ),
-                'bottom': (
-                    "position: absolute;"
-                    "bottom: 0;"
-                    "left: 0;"
-                    "right: 0;"
-                    "height: 30px;"
-                    "background: linear-gradient(to top, rgba(89, 49, 99, 0.8), transparent);"
-                    "pointer-events: none;"
-                    "z-index: 2;"
-                )
-            }
 
-            # Format the content with proper HTML structure
-            formatted_content = self.format_content_html(content)
-            
-            # Combine everything into the final HTML structure
-            html_content = """
-            <div style="{}">
-                <div style="{}">
-                    {}
-                </div>
-                <div style="{}"></div>
-                <div style="{}"></div>
+    def display_content_block(self, content):
+        """Helper method to display content block with enhanced HTML formatting"""
+        # Create the container div with improved styling and header/footer handling
+        container_style = (
+            "background-color: #593163;"
+            "color: #FFFFFF;"
+            "padding: 2rem 3rem;"
+            "border-radius: 8px;"
+            "border: 1px solid #541680;"
+            "position: relative;"
+            "box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);"
+            "font-family: Georgia, 'Times New Roman', serif;"
+            "font-size: 16px;"
+            "height: 800px;"
+            "width: 90%;"
+            "margin: 2rem auto;"
+            "position: relative;"
+            "min-height: 600px;"
+            "letter-spacing: 0.5px;"
+        )
+        
+        # Content container with improved structure
+        content_container_style = (
+            "padding: 1rem 2rem;"
+            "height: calc(100% - 4rem);"
+            "overflow-y: auto;"
+            "position: relative;"
+            "z-index: 1;"
+            "margin: 0 auto;"
+            "max-width: 100%;"
+            "scrollbar-width: thin;"
+            "scrollbar-color: #541680 #593163;"
+        )
+        
+        # Format the content with proper HTML structure
+        formatted_content = self.format_content_html(content)
+        
+        # Combine everything into the final HTML structure
+        html_content = f"""
+        <div style="{container_style}">
+            <div style="{content_container_style}">
+                {formatted_content}
             </div>
-            """.format(
-                container_style,
-                content_container_style,
-                formatted_content,
-                shadow_styles['right'],
-                shadow_styles['bottom']
+        </div>
+        """
+        
+        # Render HTML content
+        st.markdown(html_content, unsafe_allow_html=True)
+        
+        # Add read aloud controls
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            accent = st.selectbox(
+                "Voice Accent",
+                ["co.uk", "com", "com.au", "co.in", "ca"],
+                help="Select voice accent for text-to-speech",
+                key=f"accent_{hash(content)}"
             )
             
-            # Render HTML content
-            st.markdown(html_content, unsafe_allow_html=True)
-            
-            # Add read aloud controls
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                accent = st.selectbox(
-                    "Voice Accent",
-                    ["co.uk", "com", "com.au", "co.in", "ca"],
-                    help="Select voice accent for text-to-speech",
-                    key=f"accent_{hash(content)}"
-                )
-                
-                if st.button("🔊 Read Content", use_container_width=True, key=f"read_{hash(content)}"):
-                    try:
-                        with st.spinner("Generating audio..."):
-                            temp_dir = tempfile.gettempdir()
-                            temp_file = os.path.join(temp_dir, f'content_{uuid.uuid4().hex}.mp3')
+            if st.button("🔊 Read Content", use_container_width=True, key=f"read_{hash(content)}"):
+                try:
+                    with st.spinner("Generating audio..."):
+                        temp_dir = tempfile.gettempdir()
+                        temp_file = os.path.join(temp_dir, f'content_{uuid.uuid4().hex}.mp3')
+                        
+                        try:
+                            # Clean content for text-to-speech
+                            clean_content = self.clean_content_for_tts(content)
                             
+                            tts = gTTS(text=clean_content, lang='en', slow=False, tld=accent)
+                            tts.save(temp_file)
+                            
+                            with open(temp_file, 'rb') as audio_file:
+                                audio_bytes = audio_file.read()
+                            st.audio(audio_bytes)
+                            
+                        finally:
                             try:
-                                # Clean content for text-to-speech
-                                clean_content = self.clean_content_for_tts(content)
+                                time.sleep(1)
+                                if os.path.exists(temp_file):
+                                    os.remove(temp_file)
+                            except Exception:
+                                pass
                                 
-                                tts = gTTS(text=clean_content, lang='en', slow=False, tld=accent)
-                                tts.save(temp_file)
-                                
-                                with open(temp_file, 'rb') as audio_file:
-                                    audio_bytes = audio_file.read()
-                                st.audio(audio_bytes)
-                                
-                            finally:
-                                try:
-                                    time.sleep(1)
-                                    if os.path.exists(temp_file):
-                                        os.remove(temp_file)
-                                except Exception:
-                                    pass
-                                    
-                    except Exception as e:
-                        st.error(f"Error generating audio: {str(e)}")
+                except Exception as e:
+                    st.error(f"Error generating audio: {str(e)}")
+
 
     def format_content_html(self, content: str) -> str:
             """Convert markdown content to formatted HTML with enhanced document structure"""
@@ -1601,6 +1549,8 @@ class PDFLibraryApp:
             clean_text = clean_text.replace(symbol, f' {word} ')
         
         return clean_text
+        
+    
 
     def handle_qa_interface(self, book):
         """Q&A interface with optimized layout and controls"""
@@ -1622,7 +1572,7 @@ class PDFLibraryApp:
         with col2:
             max_tokens = st.slider(
                 "Maximum Length", 
-                100, 400, 250,
+                100, 2000, 1000,
                 help="Control the length of the response"
             )
             include_quotes = st.checkbox(
@@ -1683,7 +1633,7 @@ class PDFLibraryApp:
                                     # Extract content snippet if available
                                     content_snippet = source.get('content', '')
                                     if content_snippet:
-                                        content_snippet = content_snippet[:200] + '...' if len(content_snippet) > 200 else content_snippet
+                                        content_snippet = content_snippet[:300] + '...' if len(content_snippet) > 300 else content_snippet
                                         
                                     st.markdown(f"""
                                         <div style='
@@ -1698,7 +1648,7 @@ class PDFLibraryApp:
                                             {f"💡 <strong>Excerpt</strong>: <i>{content_snippet}</i>" if content_snippet else ""}
                                         </div>
                                     """, unsafe_allow_html=True)
-                        
+                        #st.markdown(f"- Page {source['page']}: {source['score']:.2f} relevance score")
                         # TruLens evaluation
                         # try:
                         #     if (hasattr(st.session_state, 'trulens_evaluator') and 

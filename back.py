@@ -5,6 +5,7 @@ import snowflake.snowpark.functions as F
 from snowflake.snowpark.context import get_active_session
 import PyPDF2
 import docx
+import textwrap 
 import io
 import uuid
 import json
@@ -190,16 +191,17 @@ Please format the response with clear section headers and bullet points for read
             st.error(f"❌ Failed to set up Snowflake context: {str(e)}")
             return False
 
+
     @staticmethod
     def ensure_table_exists(session: Session) -> bool:
-        """Ensure the RAG documents table exists with vector support"""
+        """Ensure both RAG documents and metadata tables exist"""
         try:
             session.sql("USE ROLE ACCOUNTADMIN").collect()
             
-            table_exists = session.sql(f"SHOW TABLES LIKE '{SnowparkManager.RAG_TABLE}'").collect()
-            
-            if not table_exists:
-                create_table_sql = f"""
+            # Create RAG documents table for text chunks
+            rag_table_exists = session.sql(f"SHOW TABLES LIKE '{SnowparkManager.RAG_TABLE}'").collect()
+            if not rag_table_exists:
+                create_rag_table_sql = f"""
                 CREATE TABLE IF NOT EXISTS {SnowparkManager.RAG_TABLE} (
                     DOC_ID VARCHAR NOT NULL,
                     FILENAME VARCHAR,
@@ -211,13 +213,27 @@ Please format the response with clear section headers and bullet points for read
                 )
                 ENABLE SEARCH OPTIMIZATION;
                 """
-                session.sql(create_table_sql).collect()
-                st.success(f"✅ Created table {SnowparkManager.RAG_TABLE}")
+                session.sql(create_rag_table_sql).collect()
+                print(f"Created table {SnowparkManager.RAG_TABLE}")
                 
+            # Create metadata table for binary content
+            create_metadata_table_sql = """
+            CREATE TABLE IF NOT EXISTS RAG_METADATA (
+                DOC_ID VARCHAR PRIMARY KEY,
+                FILENAME VARCHAR,
+                FILE_TYPE VARCHAR,
+                BINARY_CONTENT BINARY,
+                METADATA VARIANT,
+                CREATED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+            );
+            """
+            session.sql(create_metadata_table_sql).collect()
+            print("Created RAG_METADATA table")
+            
             return True
                 
         except Exception as e:
-            st.error(f"❌ Failed to verify/create table: {str(e)}")
+            st.error(f"❌ Failed to verify/create tables: {str(e)}")
             return False
           
     @staticmethod
@@ -505,8 +521,20 @@ Please format the response with clear section headers and bullet points for read
             st.write(f"Error details: {str(e)}")
             return False
     
+
+
     @staticmethod
-    def process_pdf(file_content: bytes, file_name: str, file_type: str, chunk_size: int) -> Tuple[bool, str, Optional[List[Dict]]]:
+    def process_pdf(
+        file_content: bytes,
+        filename: str,
+        file_type: str,
+        chunk_size: int
+    ) -> Tuple[bool, str, Optional[List[Dict]]]:
+        """
+        Process PDF content into chunks for storage and extract binary content.
+        Returns:
+            Tuple containing (success, error_message, documents)
+        """
         try:
             documents = []
             
@@ -525,7 +553,7 @@ Please format the response with clear section headers and bullet points for read
                     })
 
             elif file_type in ["application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]:
-                # Process Word document into chunks
+                # Process Word document
                 doc = docx.Document(io.BytesIO(file_content))
                 current_chunk = []
                 current_length = 0
@@ -535,7 +563,6 @@ Please format the response with clear section headers and bullet points for read
                     if not paragraph.text.strip():
                         continue
                     
-                    # Format text based on style
                     text = paragraph.text.strip()
                     style_name = paragraph.style.name.lower()
 
@@ -547,7 +574,6 @@ Please format the response with clear section headers and bullet points for read
                     else:
                         formatted_text = text
 
-                    # Check if adding this paragraph would exceed chunk_size
                     if current_length + len(formatted_text) >= chunk_size:
                         if current_chunk:
                             documents.append({
@@ -561,7 +587,6 @@ Please format the response with clear section headers and bullet points for read
                     current_chunk.append(formatted_text)
                     current_length += len(formatted_text)
 
-                # Add any remaining content
                 if current_chunk:
                     documents.append({
                         "page_num": chunk_number,
@@ -569,7 +594,6 @@ Please format the response with clear section headers and bullet points for read
                     })
 
             elif file_type == "text/plain":
-                # Process plain text file with improved formatting
                 text_content = file_content.decode("utf-8")
                 lines = text_content.split('\n')
                 current_chunk = []
@@ -581,21 +605,16 @@ Please format the response with clear section headers and bullet points for read
                     if not line:
                         continue
 
-                    # Format text content
                     if line.startswith('#'):
-                        # Preserve existing markdown headers
                         formatted_text = line
                     elif line.startswith('-') or line.startswith('*'):
-                        # Preserve list items
                         formatted_text = line
                     elif ':' in line and len(line.split(':')[0].split()) <= 3:
-                        # Convert section headers to markdown
                         section, content = line.split(':', 1)
                         formatted_text = f"### {section.strip()}\n{content.strip()}"
                     else:
                         formatted_text = line
 
-                    # Check chunk size
                     if current_length + len(formatted_text) >= chunk_size:
                         if current_chunk:
                             documents.append({
@@ -609,7 +628,6 @@ Please format the response with clear section headers and bullet points for read
                     current_chunk.append(formatted_text)
                     current_length += len(formatted_text)
 
-                # Add any remaining content
                 if current_chunk:
                     documents.append({
                         "page_num": chunk_number,
@@ -619,11 +637,11 @@ Please format the response with clear section headers and bullet points for read
             else:
                 return False, f"Unsupported file type: {file_type}", None
 
+            print(f"Processed {len(documents)} chunks from document")
             return True, "", documents
 
         except Exception as e:
             return False, f"Error processing document: {str(e)}", None
-    
     
     @staticmethod
     def check_document_exists(session: Session, filename: str) -> bool:
@@ -798,49 +816,91 @@ Please format the response with clear section headers and bullet points for read
             return False
     
 
-   
+
+
+
     @staticmethod
     def upload_documents(
         session: Session,
         documents: List[Dict],
         filename: str,
         file_type: str,
-        api_key: str
+        api_key: str,
+        file_content: bytes = None
     ) -> bool:
-        """Upload processed documents with embeddings to Snowflake"""
+        """Upload processed documents with embeddings and PDF binary content if applicable"""
         try:
-            #st.write("🔍 Starting document upload process")
-            #st.write(f"🔍 Searching for file details with filename: {filename}")
-            #st.write(f"🔍 st.session_state.files: {st.session_state.files}")
             start_time = time.time()
             file_details = next((f for f in st.session_state.files if f['name'] == filename), None)
             
             if file_details:
-                st.write("🔍 File details found")
+                print("🔍 File details found")
+                filename_escaped = filename.replace("'", "''")
                 
-                # Delete existing entries
-                delete_sql = f"""
+                # Delete existing entries from RAG table
+                delete_rag_sql = f"DELETE FROM {SnowparkManager.RAG_TABLE} WHERE FILENAME = '{filename_escaped}'"
+                session.sql(delete_rag_sql).collect()
+                
+                # Only handle RAG_METADATA for PDFs
+                if file_type == "application/pdf" and file_content:
+                    # Delete existing PDF metadata
+                    delete_metadata_sql = f"DELETE FROM RAG_METADATA WHERE FILENAME = '{filename_escaped}'"
+                    session.sql(delete_metadata_sql).collect()
+                    
+                    # Store binary content for PDFs
+                    metadata_doc_id = str(uuid.uuid4())
+                    metadata = {
+                        'upload_timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'file_size': len(file_content)
+                    }
+                    
+                    metadata_insert_sql = f"""
+                    INSERT INTO RAG_METADATA (
+                        DOC_ID, 
+                        FILENAME, 
+                        FILE_TYPE, 
+                        BINARY_CONTENT, 
+                        METADATA
+                    ) 
+                    SELECT
+                        '{metadata_doc_id}',
+                        '{filename_escaped}',
+                        '{file_type}',
+                        TO_BINARY(HEX_ENCODE(?)),
+                        PARSE_JSON('{json.dumps(metadata)}')
+                    """
+                    session.sql(metadata_insert_sql, params=[file_content]).collect()
+                    print(f"Inserted binary content into RAG_METADATA for PDF, doc_id: {metadata_doc_id}")
+                
+                # Update BOOK_METADATA
+                delete_book_sql = f"""
                 DELETE FROM TESTDB.MYSCHEMA.BOOK_METADATA 
-                WHERE FILENAME = '{filename.replace("'", "''")}'
+                WHERE FILENAME = '{filename_escaped}'
                 """
-                session.sql(delete_sql).collect()
+                session.sql(delete_book_sql).collect()
                 
-                # Single metadata insertion using the working code from main page
+                # Insert into BOOK_METADATA
                 book_id = str(uuid.uuid4())
-                file_size = f"{len(json.dumps(documents)) / 1024:.1f} KB"
+                file_size = f"{len(file_content) if file_content else 0 / 1024:.1f} KB"
                 
-                metadata_sql = f"""
-                INSERT INTO TESTDB.MYSCHEMA.BOOK_METADATA 
-                    (BOOK_ID, FILENAME, CATEGORY, DATE_ADDED, SIZE, USAGE_STATS)
+                book_metadata_sql = f"""
+                INSERT INTO TESTDB.MYSCHEMA.BOOK_METADATA (
+                    BOOK_ID,
+                    FILENAME,
+                    CATEGORY,
+                    DATE_ADDED,
+                    SIZE,
+                    USAGE_STATS
+                )
                 SELECT
                     '{book_id}',
-                    '{filename.replace("'", "''")}',
+                    '{filename_escaped}',
                     '{file_details['category'].replace("'", "''")}',
                     CURRENT_TIMESTAMP(),
                     '{file_size}',
                     TO_VARIANT(PARSE_JSON('{{ "queries": 0, "summaries": 0 }}'))
                 """
-                session.sql(metadata_sql).collect()
+                session.sql(book_metadata_sql).collect()
                 
                 # Process documents for RAG table
                 temp_table = f"TEMP_{uuid.uuid4().hex[:8]}"
@@ -858,11 +918,11 @@ Please format the response with clear section headers and bullet points for read
                 # Prepare document data
                 rows = []
                 for idx, doc in enumerate(documents, 1):
-                    metadata = {
-                        'source_type': 'pdf' if file_type == 'application/pdf' else 'doc',
+                    chunk_metadata = {
                         'page_number': doc.get('page_num', idx),
                         'total_pages': len(documents),
-                        'upload_timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        'chunk_number': idx,
+                        'file_type': file_type  # Store file type in metadata
                     }
                     
                     rows.append([
@@ -870,21 +930,21 @@ Please format the response with clear section headers and bullet points for read
                         filename,                           # FILENAME
                         file_type,                         # FILE_TYPE
                         doc['text'],                       # CONTENT
-                        json.dumps(metadata)               # METADATA
+                        json.dumps(chunk_metadata)         # METADATA
                     ])
 
                 if not rows:
                     st.error("No valid documents to upload")
                     return False
 
-                # Create dataframe with schema
+                # Create dataframe and save to temporary table
                 df = session.create_dataframe(
                     rows,
                     schema=["DOC_ID", "FILENAME", "FILE_TYPE", "CONTENT", "METADATA"]
                 )
                 df.write.save_as_table(temp_table, mode="overwrite", table_type="temporary")
 
-                # Insert RAG documents
+                # Insert into final table with embeddings
                 insert_sql = f"""
                 INSERT INTO {SnowparkManager.RAG_TABLE} (
                     DOC_ID, FILENAME, FILE_TYPE, CONTENT, EMBEDDING, METADATA, CREATED_AT
@@ -906,55 +966,187 @@ Please format the response with clear section headers and bullet points for read
                 session.sql(insert_sql).collect()
                 session.sql(f"DROP TABLE IF EXISTS {temp_table}").collect()
                 
-                end_time = time.time()
-                processing_time = int((end_time - start_time) * 1000)  # Calculate time in milliseconds
-                metrics_query = f"""
-                INSERT INTO ANALYTICS_METRICS (
-                    METRIC_ID,
-                    TIMESTAMP,
-                    DOCUMENT_NAME,
-                    ACTION_TYPE,
-                    STATUS,
-                    MEMORY_USAGE_MB,
-                    TOKEN_COUNT,
-                    RESPONSE_TIME_MS
-                ) VALUES (
-                    '{str(uuid.uuid4())}',
-                    CURRENT_TIMESTAMP(),
-                    '{filename.replace("'", "''")}',
-                    'FILE_UPLOAD',
-                    'success',
-                    {len(json.dumps(documents)) / (1024 * 1024)},
-                    0,
-                    {processing_time}
-                )
-                """
-                session.sql(metrics_query).collect()
-                
-                try:
-                    session.sql(metrics_query).collect()
-                    st.write("Debug: Upload metrics recorded")
-                except Exception as e:
-                    st.write(f"Debug: Error recording metrics: {str(e)}")
-                
-                
                 return True
-            
             else:
                 st.error(f"File details not found for {filename}")
                 return False
 
         except Exception as e:
             st.error(f"Upload failed: {str(e)}")
-            st.write(f"Error details: {str(e)}")
+            print(f"Error details: {str(e)}")
             return False
+        
+    # @staticmethod
+    # def upload_documents(
+    #     session: Session,
+    #     documents: List[Dict],
+    #     filename: str,
+    #     file_type: str,
+    #     api_key: str
+    # ) -> bool:
+    #     """Upload processed documents with embeddings to Snowflake"""
+    #     try:
+    #         start_time = time.time()
+    #         file_details = next((f for f in st.session_state.files if f['name'] == filename), None)
+            
+    #         if file_details:
+    #             st.write("🔍 File details found")
+                
+    #             # Delete existing entries
+    #             delete_sql = f"""
+    #             DELETE FROM TESTDB.MYSCHEMA.BOOK_METADATA 
+    #             WHERE FILENAME = '{filename.replace("'", "''")}'
+    #             """
+    #             session.sql(delete_sql).collect()
+                
+    #             # Single metadata insertion
+    #             book_id = str(uuid.uuid4())
+    #             file_size = f"{len(json.dumps(documents)) / 1024:.1f} KB"
+                
+    #             metadata_sql = f"""
+    #             INSERT INTO TESTDB.MYSCHEMA.BOOK_METADATA 
+    #                 (BOOK_ID, FILENAME, CATEGORY, DATE_ADDED, SIZE, USAGE_STATS)
+    #             SELECT
+    #                 '{book_id}',
+    #                 '{filename.replace("'", "''")}',
+    #                 '{file_details['category'].replace("'", "''")}',
+    #                 CURRENT_TIMESTAMP(),
+    #                 '{file_size}',
+    #                 TO_VARIANT(PARSE_JSON('{{ "queries": 0, "summaries": 0 }}'))
+    #             """
+    #             session.sql(metadata_sql).collect()
+                
+    #             # Process documents for RAG table
+    #             temp_table = f"TEMP_{uuid.uuid4().hex[:8]}"
+    #             create_temp_table_sql = f"""
+    #             CREATE TEMPORARY TABLE {temp_table} (
+    #                 DOC_ID VARCHAR,
+    #                 FILENAME VARCHAR,
+    #                 FILE_TYPE VARCHAR,
+    #                 CONTENT TEXT,
+    #                 METADATA VARIANT
+    #             )
+    #             """
+    #             session.sql(create_temp_table_sql).collect()
 
-        finally:
-            try:
-                session.sql("ALTER WAREHOUSE Compute_WH SET WAREHOUSE_SIZE = 'XSMALL'").collect()
-            except Exception as e:
-                st.warning(f"Note: Could not scale down warehouse: {str(e)}")
+    #             # Prepare document data
+    #             rows = []
+    #             metadata_rows = []
+    #             for idx, doc in enumerate(documents, 1):
+    #                 doc_id = str(uuid.uuid4())
+    #                 metadata = {
+    #                     'source_type': 'pdf' if file_type == 'application/pdf' else 'doc',
+    #                     'page_number': doc.get('page_num', idx),
+    #                     'total_pages': len(documents),
+    #                     'upload_timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    #                 }
+                    
+    #                 rows.append([
+    #                     doc_id,                             # DOC_ID
+    #                     filename,                           # FILENAME
+    #                     file_type,                          # FILE_TYPE
+    #                     doc['text'],                        # CONTENT
+    #                     json.dumps(metadata)                # METADATA
+    #                 ])
 
+    #                 if idx == 1:
+    #                     metadata_rows.append([
+    #                         doc_id,                        # DOC_ID
+    #                         filename,                      # FILENAME
+    #                         file_type,                     # FILE_TYPE
+    #                         st.session_state.uploaded_file.getvalue(),  # BINARY_CONTENT
+    #                         json.dumps(metadata)           # METADATA
+    #                     ])
+
+    #             if not rows:
+    #                 st.error("No valid documents to upload")
+    #                 return False
+
+    #             # Create dataframe with schema
+    #             df = session.create_dataframe(
+    #                 rows,
+    #                 schema=["DOC_ID", "FILENAME", "FILE_TYPE", "CONTENT", "METADATA"]
+    #             )
+    #             df.write.save_as_table(temp_table, mode="overwrite", table_type="temporary")
+
+    #             # Insert into RAG_METADATA table
+    #             metadata_df = session.create_dataframe(
+    #                 metadata_rows,
+    #                 schema=["DOC_ID", "FILENAME", "FILE_TYPE", "BINARY_CONTENT", "METADATA"]
+    #             )
+    #             metadata_df.write.save_as_table("RAG_METADATA", mode="append")
+
+    #             # Insert RAG documents
+    #             insert_sql = f"""
+    #             INSERT INTO {SnowparkManager.RAG_TABLE} (
+    #                 DOC_ID, FILENAME, FILE_TYPE, CONTENT, EMBEDDING, METADATA, CREATED_AT
+    #             )
+    #             SELECT 
+    #                 t.DOC_ID,
+    #                 t.FILENAME,
+    #                 t.FILE_TYPE,
+    #                 t.CONTENT,
+    #                 CAST(SNOWFLAKE.CORTEX.EMBED_TEXT_768(
+    #                     'snowflake-arctic-embed-m-v1.5',
+    #                     t.CONTENT
+    #                 ) AS VECTOR(FLOAT, 768)),
+    #                 PARSE_JSON(t.METADATA),
+    #                 CURRENT_TIMESTAMP()
+    #             FROM {temp_table} t
+    #             """
+                
+    #             session.sql(insert_sql).collect()
+    #             session.sql(f"DROP TABLE IF EXISTS {temp_table}").collect()
+                
+    #             end_time = time.time()
+    #             processing_time = int((end_time - start_time) * 1000)  # Calculate time in milliseconds
+    #             metrics_query = f"""
+    #             INSERT INTO ANALYTICS_METRICS (
+    #                 METRIC_ID,
+    #                 TIMESTAMP,
+    #                 DOCUMENT_NAME,
+    #                 ACTION_TYPE,
+    #                 STATUS,
+    #                 MEMORY_USAGE_MB,
+    #                 TOKEN_COUNT,
+    #                 RESPONSE_TIME_MS
+    #             ) VALUES (
+    #                 '{str(uuid.uuid4())}',
+    #                 CURRENT_TIMESTAMP(),
+    #                 '{filename.replace("'", "''")}',
+    #                 'FILE_UPLOAD',
+    #                 'success',
+    #                 {len(json.dumps(documents)) / (1024 * 1024)},
+    #                 0,
+    #                 {processing_time}
+    #             )
+    #             """
+                
+    #             try:
+    #                 session.sql(metrics_query).collect()
+    #                 st.write("Debug: Upload metrics recorded")
+    #             except Exception as e:
+    #                 st.write(f"Debug: Error recording metrics: {str(e)}")
+                
+    #             return True
+            
+    #         else:
+    #             st.error(f"File details not found for {filename}")
+    #             return False
+
+    #     except Exception as e:
+    #         st.error(f"Upload failed: {str(e)}")
+    #         st.write(f"Error details: {str(e)}")
+    #         return False
+
+    #     finally:
+    #         try:
+    #             session.sql("ALTER WAREHOUSE Compute_WH SET WAREHOUSE_SIZE = 'XSMALL'").collect()
+    #         except Exception as e:
+    #             st.warning(f"Note: Could not scale down warehouse: {str(e)}")
+        
+    
+    
     
     @staticmethod
     @instrument
@@ -976,8 +1168,9 @@ Please format the response with clear section headers and bullet points for read
             return response[0][0].strip()
    
 
+
+
     @staticmethod
-    @instrument
     def semantic_search_with_llm(
             query: str,
             filename: Optional[str] = None,
@@ -990,62 +1183,50 @@ Please format the response with clear section headers and bullet points for read
             include_quotes: bool = True,
             max_tokens: int = 500,
             model: str = 'mistral-large2',
-            operation_type: str ="SEARCH", # Add default operation type
+            operation_type: str = "SEARCH"
         ) -> Optional[Dict[str, Any]]:
         """
-        Optimized semantic search across documents with improved performance.
+        Semantic search using Cortex Search Service with LLM response generation.
         """
         session = SnowparkManager.get_session()
         if not session:
             return None
 
         try:
-            start_time = time.time()  
+            start_time = time.time()
             if not query or not query.strip():
                 return {'answer': 'Please provide a valid search query.', 'sources': [], 'raw_results': []}
-            
-            escaped_query = query.replace("'", "''")
-             # Build the search condition based on filename
-            if filename:
-                safe_filename = filename.replace("'", "''")
-                content_query = f"""
-                SELECT CONTENT, METADATA:page_number::INTEGER as PAGE_NUM
-                FROM RAG_DOCUMENTS_TMP
-                WHERE FILENAME = '{safe_filename}'
-                ORDER BY PAGE_NUM
-                """
-                all_pages = session.sql(content_query).collect()
-                page_map = {row['PAGE_NUM']: row['CONTENT'] for row in all_pages}
 
-
-            root = Root(session)
-            search_service_name = root.databases["TESTDB"].schemas["MYSCHEMA"].cortex_search_services["MY_RAG_SEARCH_SERVICE"].name
-            
             # Set proper context first
             session.sql("USE DATABASE TESTDB").collect()
             session.sql("USE SCHEMA MYSCHEMA").collect()
             session.sql("USE WAREHOUSE COMPUTE_WH").collect()
-            
-            
 
-            print("Debug - Results before search_query inside semantic_search_llm")
+            # Get page mapping if filename is provided
+            page_map = {}
+            if filename:
+                safe_filename = filename.replace("'", "''")
+                content_query = """
+                SELECT CONTENT, METADATA:page_number::INTEGER as PAGE_NUM
+                FROM RAG_DOCUMENTS_TMP
+                WHERE FILENAME = '{}'
+                ORDER BY PAGE_NUM
+                """.format(safe_filename)
+                all_pages = session.sql(content_query).collect()
+                page_map = {row['PAGE_NUM']: row['CONTENT'] for row in all_pages}
+
+            # Initialize cortex search service
             root = Root(session)
-            cortex_search_service = (
-                root.databases["TESTDB"]
-                .schemas["MYSCHEMA"]
-                .cortex_search_services["MY_RAG_SEARCH_SERVICE"]
-            )
-
-            print("Calling cortex_search_service.search")
+            search_service = root.databases["TESTDB"].schemas["MYSCHEMA"].cortex_search_services["MY_RAG_SEARCH_SERVICE"]
+            
+            # Build simple search parameters focusing on basic search functionality
             search_params = {
                 "query": query,
                 "columns": ["CONTENT", "FILENAME", "METADATA"],
                 "limit": limit,
                 "similarity_threshold": 0.5  # Lower threshold for better recall
             }
-
-            # print(f"Search query: {query}")
-            # print(f"Found {len(resp.results) if resp.results else 0} results")
+            
             if filename:
                 #search_params["filters"] = "FILENAME = '{}'".format(safe_filename)
                 filters = "FILENAME = '{}'".format(safe_filename)
@@ -1055,7 +1236,7 @@ Please format the response with clear section headers and bullet points for read
             print(f"Debug - Filters: {filters}")
             
             # Execute search
-            resp = cortex_search_service.search(**search_params, filters=filters)
+            resp = search_service.search(**search_params, filters=filters)
             
             # Debug search results
             if resp.results:
@@ -1064,150 +1245,131 @@ Please format the response with clear section headers and bullet points for read
                     print(f"Debug - Result {idx + 1} preview: {result['CONTENT'][:100]}...")
                 
             # Execute search using cortex service
-           # resp = cortex_search_service.search(**search_params)
-
+            #resp = search_service.search(**search_params)
 
             if not resp.results:
                 return {'answer': 'No relevant results found.', 'sources': [], 'raw_results': []}
 
-
-           # Process results
+            # Process results
             processed_results = []
             for idx, result in enumerate(resp.results):
-                # print(f"Processing result {idx}...")
-                # print(f"Type: {type(result)}")
-                # print(f"Available fields: {result.keys() if hasattr(result, 'keys') else dir(result)}")
                 try:
                     content = result['CONTENT'].strip() if result['CONTENT'] is not None else ""
+                    result_filename = result.get('FILENAME', 'Unknown')
                     
-                    metadata = result.get('METADATA', {})
-                    matching_page = next((page_num for page_num, page_content in page_map.items() 
-                            if content in page_content), 1)
+                    # Get page number from metadata
+                    page_num = None
+                    if result['METADATA']:
+                        try:
+                            metadata = result['METADATA']
+                            if isinstance(metadata, str):
+                                metadata = json.loads(metadata)
+                            page_num = metadata.get('page_number')
+                        except:
+                            pass
                     
                     processed_results.append({
-                        'DOC_ID': result.get('DOC_ID', f'doc_{idx}'),
-                        'FILENAME': result.get('FILENAME', 'Unknown'),
-                        'CONTENT': content[:300] + "..." if len(content) > 300 else content,
-                        'PAGE_NUMBER': matching_page,
-                        'SIMILARITY_SCORE': float(result['SCORE']) if 'SCORE' in result else float(result.get('_SCORE', 0.0))
+                        'FILENAME': result_filename,
+                        'CONTENT': content,
+                        'PAGE_NUMBER': page_num or 1,
+                        'SIMILARITY_SCORE': float(result['_SCORE']) if '_SCORE' in result else 0.0
                     })
-                    # print(f"Debug - Results after formatting: {len(processed_results)}")
-                    # print(f"Debug - Successfully processed result for {result.get('FILENAME', 'Unknown')}")
-                    # print(f"Debug - page number: {matching_page}")
+                    
                 except Exception as e:
                     print(f"Error processing result {idx}: {str(e)}")
+                    continue
 
-            print(f"Debug - Processed results count: {len(processed_results)}")
+            # Prepare context with length management
+            context_sections = []
+            total_length = 0
+            max_context_length = 32000  # Conservative limit
+            
+            for i, r in enumerate(processed_results):
+                section_header = f"Section {i+1} (Source: {r['FILENAME']}, Page {r['PAGE_NUMBER']})"
+                section_content = r['CONTENT']
                 
-       
+                # Truncate long sections
+                if len(section_content) > 4000:
+                    section_content = section_content[:4000] + "..."
                 
+                section_text = f"{section_header}\n{section_content}"
+                
+                if total_length + len(section_text) > max_context_length:
+                    break
+                    
+                context_sections.append(section_text)
+                total_length += len(section_text)
+            
+            context = "\n\n".join(context_sections)
+
             # Get style and format instructions
-            style_instr = SnowparkManager.STYLE_INSTRUCTIONS.get(
-                style, 
-                SnowparkManager.STYLE_INSTRUCTIONS["Detailed"]
-            )
-            format_instr = SnowparkManager.FORMAT_INSTRUCTIONS.get(
-                format_type, 
-                SnowparkManager.FORMAT_INSTRUCTIONS["Paragraph"]
-            )
+            style_instr = SnowparkManager.STYLE_INSTRUCTIONS.get(style, "Provide detailed answers with supporting details.")
+            format_instr = SnowparkManager.FORMAT_INSTRUCTIONS.get(format_type, "Format the response as paragraphs.")
 
+            # Prepare system prompt
+            system_prompt = f"""You are an AI assistant analyzing documents. Based on the context provided, answer the user's question.
+            If you cannot find the relevant information in the context, clearly state that.
+            Style: {style_instr}
+            Format: {format_instr}
 
-            # Prepare context more efficiently
-            context = "\n\n".join(
-                f"Section {i+1} (from {r['FILENAME']}, Page {r['PAGE_NUMBER'] or 'N/A'}):\n{r['CONTENT']}"
-                for i, r in enumerate(processed_results)
-            )
+            Context:
+            {context}
+            """
 
-            system_prompt = f"""You are an AI assistant specifically analyzing the document:'{filename}'.
-
-
-            Instructions:
-            1. Base your answers on the provided context below
-            2. If you cannot find the information in the context, say ''I cannot find information about [topic] in the provided context''
-            3. When citing information, mention which section/document it comes from
-            4. Be precise and accurate - do not make assumptions
-            5. If information spans multiple pages, mention all relevant page numbers
-            6. If the question is unclear, ask for clarification"""
-
-            # Combine with style instructions and context
-            full_system_prompt = f"{system_prompt}\n\nStyle instructions: {style_instr}\nFormat instructions: {format_instr}\n\nContext:\n{context}"
-
-            # Generate LLM query with proper SQL string escaping
-            llm_query = f"""
+            # Generate LLM response
+            llm_query = """
             SELECT SNOWFLAKE.CORTEX.COMPLETE(
                 'mistral-large2',
                 ARRAY_CONSTRUCT(
-                    OBJECT_CONSTRUCT('role', 'system', 'content', '{full_system_prompt.replace("'", "''")}'),
-                    OBJECT_CONSTRUCT('role', 'user', 'content', 'Based on the provided context, {query.replace("'", "''")}')
+                    OBJECT_CONSTRUCT('role', 'system', 'content', '{system_prompt}'),
+                    OBJECT_CONSTRUCT('role', 'user', 'content', '{user_query}')
                 ),
                 OBJECT_CONSTRUCT(
                     'temperature', {temperature},
                     'max_tokens', {max_tokens}
                 )
             ) as response
-            """
+            """.format(
+                system_prompt=system_prompt.replace("'", "''"),
+                user_query=query.replace("'", "''"),
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
 
             llm_response = session.sql(llm_query).collect()
             synthesized_answer = SnowparkManager.process_llm_response(llm_response)
 
-            eval_results = None
-            # Optional TruLens evaluation
-            if (hasattr(st.session_state, 'trulens_evaluator') and 
-                st.session_state.trulens_evaluator and 
-                st.session_state.trulens_evaluator.initialized):
-                
-                # print("Inside semantic_search before calling rag_pipe")
-                try:
-                    contexts = [{"CONTENT": r['CONTENT']} for r in processed_results]
-                    eval_results = st.session_state.trulens_evaluator.evaluate_rag_pipeline(
-                        query=query,
-                        response=synthesized_answer,
-                        filename=filename,
-                        contexts=contexts,
-                        operation_type=operation_type,  # Add this line
-                        style=style,
-                        format_type=format_type,
-                        output_token_count=len(synthesized_answer.split()) if synthesized_answer else 0
-                    )
-                    # print("Inside semantic_search after calling rag_pipe")
-                    #SnowparkManager.debug_print_metrics("EVAL_RESULTS", "Got evaluation results", eval_results)
+            # Record metrics
+            end_time = time.time()
+            output_token_count = len(synthesized_answer.split()) if synthesized_answer else 0
+            memory_mb = Process().memory_info().rss / (1024 * 1024)
+            processing_time = int((end_time - start_time) * 1000)
 
-                    end_time = time.time()
-                    # After successful search, before return:
-                    output_token_count=len(synthesized_answer.split()) if synthesized_answer else 0
-                    memory_mb = Process().memory_info().rss / (1024 * 1024)  # Calculate memory in MB
-                    processing_time = int((end_time - start_time) * 1000)  # Calculate time in ms
-                    
-                    metrics_sql = f"""
-                    INSERT INTO ANALYTICS_METRICS (
-                        METRIC_ID,
-                        TIMESTAMP,
-                        DOCUMENT_NAME,
-                        ACTION_TYPE,
-                        USER_QUERY,
-                        STATUS,
-                        TOKEN_COUNT,
-                        MEMORY_USAGE_MB,
-                        RESPONSE_TIME_MS,
-                    ) VALUES (
-                        '{str(uuid.uuid4())}',
-                        CURRENT_TIMESTAMP(),
-                        '{filename.replace("'", "''")}',
-                        'SEARCH',
-                        '{query.replace("'", "''")}',
-                        'success',
-                        {output_token_count},
-                        {memory_mb},
-                        {processing_time},
-                    )
-                    """
-                    session.sql(metrics_sql).collect()                  
-                        
-                    
-                except Exception as e:
-                    print(f"TruLens evaluation error: {str(e)}")
-                    
-                       
+            metrics_sql = f"""
+            INSERT INTO ANALYTICS_METRICS (
+                METRIC_ID,
+                TIMESTAMP,
+                DOCUMENT_NAME,
+                ACTION_TYPE,
+                USER_QUERY,
+                STATUS,
+                TOKEN_COUNT,
+                MEMORY_USAGE_MB,
+                RESPONSE_TIME_MS
+            ) VALUES (
+                '{str(uuid.uuid4())}',
+                CURRENT_TIMESTAMP(),
+                '{(filename or "multiple_docs").replace("'", "''")}',
+                'SEARCH',
+                '{query.replace("'", "''")}',
+                'success',
+                {output_token_count},
+                {memory_mb},
+                {processing_time}
+            )
+            """
+            session.sql(metrics_sql).collect()
+
             return {
                 'answer': synthesized_answer,
                 'sources': [{
@@ -1218,7 +1380,6 @@ Please format the response with clear section headers and bullet points for read
                 } for r in processed_results],
                 'raw_results': processed_results
             }
-              
 
         except Exception as e:
             st.error(f"❌ Search failed: {str(e)}")
@@ -1226,9 +1387,7 @@ Please format the response with clear section headers and bullet points for read
         finally:
             if session:
                 session.close()
-         
-       # Add this method to SnowparkManager class in back.py
-
+            
     @staticmethod
     def get_book_recommendations(current_book: str, recommendation_type: str = "content", limit: int = 3) -> List[Dict]:
         """

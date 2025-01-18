@@ -354,7 +354,7 @@ def render_book_thumbnail(book: Dict, category_color: str, cat_idx: int, row_idx
     truncated_name = truncate_filename(book['name'])
     
     # Define consistent dimensions for all displays
-    img_width = "220px"
+    img_width = "200px"
     img_height = "200px"
     
     # Fallback image path (if no thumbnail is available)

@@ -156,7 +156,7 @@ class PDFLibraryApp:
             st.markdown(
                 """
                 <div style="margin-top: -40px; text-align: left;">
-                    <img src="https://i.postimg.cc/cJrXGrxd/PALicon.png" width="150">
+                    <img src="https://i.postimg.cc/cJrXGrxd/PALicon.png" width="120">
                 </div>
                 """,
                 unsafe_allow_html=True

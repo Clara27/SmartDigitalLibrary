@@ -792,6 +792,18 @@ Please format the response with clear section headers and bullet points for read
                         st.write(f"Debug: Error recording metrics: {str(e)}")
                     
                     
+                    from thumbnail_generator import ThumbnailGenerator
+
+                    # After processing the uploaded file
+                    thumbnail = ThumbnailGenerator.generate_thumbnail(
+                        file_content=uploaded_file.read(),
+                        file_type=uploaded_file.type,
+                        filename=uploaded_file.name
+                    )
+
+                    if thumbnail:
+                        file_details["thumbnail"] = thumbnail
+                    
                     return True
                 else:
                     st.write(f"Debug: File not found in stage after upload")
@@ -882,24 +894,84 @@ Please format the response with clear section headers and bullet points for read
                 # Insert into BOOK_METADATA
                 book_id = str(uuid.uuid4())
                 file_size = f"{len(file_content) if file_content else 0 / 1024:.1f} KB"
+
+                # Thumbnail generation
+                if file_content:
+                    try:
+                        # Create a copy of file_content for thumbnail generation
+                        file_content_copy = file_content[:]
+
+                        # Generate thumbnail using the copy
+                        from thumbnail_generator import ThumbnailGenerator
+                        thumbnail = ThumbnailGenerator.generate_thumbnail(
+                            file_content=file_content_copy,
+                            file_type=file_type,
+                            filename=filename
+                        )
+                        
+                        # Store thumbnail status in session state
+                        if 'thumbnails_status' not in st.session_state:
+                            st.session_state.thumbnails_status = {}
+                            
+                        st.session_state.thumbnails_status[filename] = {
+                            'generated': thumbnail is not None,
+                            'timestamp': datetime.now().isoformat(),
+                            'file_type': file_type
+                        }
+                        
+                        print(f"Thumbnail generated for {filename}: {'Success' if thumbnail else 'Failed'}")
+
+                    except Exception as e:
+                        print(f"Error generating thumbnail: {str(e)}")
+                        if 'thumbnails_status' not in st.session_state:
+                            st.session_state.thumbnails_status = {}
+                        st.session_state.thumbnails_status[filename] = {
+                            'generated': False,
+                            'error': str(e),
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        thumbnail = None
+
+                # Construct SQL based on whether we have a thumbnail
+                if thumbnail:
+                    book_metadata_sql = f"""
+                    INSERT INTO TESTDB.MYSCHEMA.BOOK_METADATA (
+                        BOOK_ID,
+                        FILENAME,
+                        CATEGORY,
+                        DATE_ADDED,
+                        SIZE,
+                        USAGE_STATS,
+                        THUMBNAIL
+                    )
+                    SELECT
+                        '{book_id}',
+                        '{filename_escaped}',
+                        '{file_details['category'].replace("'", "''")}',
+                        CURRENT_TIMESTAMP(),
+                        '{file_size}',
+                        TO_VARIANT(PARSE_JSON('{{ "queries": 0, "summaries": 0 }}')),
+                        '{thumbnail}'
+                    """
+                else:
+                    book_metadata_sql = f"""
+                    INSERT INTO TESTDB.MYSCHEMA.BOOK_METADATA (
+                        BOOK_ID,
+                        FILENAME,
+                        CATEGORY,
+                        DATE_ADDED,
+                        SIZE,
+                        USAGE_STATS
+                    )
+                    SELECT
+                        '{book_id}',
+                        '{filename_escaped}',
+                        '{file_details['category'].replace("'", "''")}',
+                        CURRENT_TIMESTAMP(),
+                        '{file_size}',
+                        TO_VARIANT(PARSE_JSON('{{ "queries": 0, "summaries": 0 }}'))
+                    """
                 
-                book_metadata_sql = f"""
-                INSERT INTO TESTDB.MYSCHEMA.BOOK_METADATA (
-                    BOOK_ID,
-                    FILENAME,
-                    CATEGORY,
-                    DATE_ADDED,
-                    SIZE,
-                    USAGE_STATS
-                )
-                SELECT
-                    '{book_id}',
-                    '{filename_escaped}',
-                    '{file_details['category'].replace("'", "''")}',
-                    CURRENT_TIMESTAMP(),
-                    '{file_size}',
-                    TO_VARIANT(PARSE_JSON('{{ "queries": 0, "summaries": 0 }}'))
-                """
                 session.sql(book_metadata_sql).collect()
                 
                 # Process documents for RAG table
@@ -975,7 +1047,7 @@ Please format the response with clear section headers and bullet points for read
             st.error(f"Upload failed: {str(e)}")
             print(f"Error details: {str(e)}")
             return False
-        
+    
     # @staticmethod
     # def upload_documents(
     #     session: Session,

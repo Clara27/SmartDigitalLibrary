@@ -1295,6 +1295,7 @@ Please format the response with clear section headers and bullet points for read
             root = Root(session)
             search_service = root.databases["TESTDB"].schemas["MYSCHEMA"].cortex_search_services["MY_RAG_SEARCH_SERVICE"]
             
+            filters = None
             # Build simple search parameters focusing on basic search functionality
             search_params = {
                 "query": query,
@@ -1304,7 +1305,7 @@ Please format the response with clear section headers and bullet points for read
             }
             
             if filename:
-                #search_params["filters"] = "FILENAME = '{}'".format(safe_filename)
+                search_params["filters"] = "FILENAME = '{}'".format(safe_filename)
                 filters = "FILENAME = '{}'".format(safe_filename)
                 
             print(f"Debug - Executing search with query: {query}")

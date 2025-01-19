@@ -543,6 +543,18 @@ class PDFLibraryApp:
             st.error(f"Error displaying PDF: {str(e)}")
             print(f"PDF viewer error details: {str(e)}")
 
+    def get_document_settings(self):
+            """Get document settings from session state or initialize defaults"""
+            if 'doc_settings' not in st.session_state:
+                st.session_state.doc_settings = {
+                    'width': 1200,
+                    'enable_text': True,
+                    'pages_vertical_spacing': 2,
+                    'resolution_boost': 1,
+                    'font_size': 16
+                }
+            return st.session_state.doc_settings
+
     def render_document_reader(self, book):
         """Document reader with support for different file types"""
         session = SnowparkManager.get_session()
@@ -551,10 +563,10 @@ class PDFLibraryApp:
             return
 
         try:
-            # First get the document type from RAG_DOCUMENTS_TMP
+            # Get document type
             type_query = f"""
             SELECT DISTINCT FILE_TYPE
-            FROM {SnowparkManager.RAG_TABLE}
+            FROM TESTDB.MYSCHEMA.RAG_DOCUMENTS_TMP
             WHERE FILENAME = '{book['name'].replace("'", "''")}'
             LIMIT 1
             """
@@ -565,20 +577,10 @@ class PDFLibraryApp:
                 return
                 
             file_type = type_result[0]['FILE_TYPE']
-            print(f"Document type: {file_type}")  # Debug print
             
-            # Common sidebar controls
-            with st.sidebar:
-                st.header("Document Settings")
-                width = st.slider(
-                    "Viewer Width",
-                    min_value=400,
-                    max_value=1200,
-                    value=1200
-                )
+            settings = self.get_document_settings()
             
             if file_type == 'application/pdf':
-                # For PDFs, get binary content from RAG_METADATA
                 pdf_query = f"""
                 SELECT BINARY_CONTENT
                 FROM RAG_METADATA
@@ -593,42 +595,18 @@ class PDFLibraryApp:
                     
                 binary_content = bytes(pdf_result[0]['BINARY_CONTENT'])
                 
-                # PDF-specific controls
-                with st.sidebar:
-                    enable_text = st.checkbox(
-                        'Enable Text Selection', 
-                        value=True,
-                        help="Allow text selection and copy-paste"
-                    )
-                    
-                    pages_vertical_spacing = st.slider(
-                        "Page Spacing",
-                        min_value=0,
-                        max_value=10,
-                        value=2
-                    )
-                    
-                    resolution_boost = st.slider(
-                        "Resolution Quality",
-                        min_value=1,
-                        max_value=10,
-                        value=1
-                    )
-                
-                # Display PDF using viewer
                 self.wrapper_pdf_viewer(
                     binary_content=binary_content,
-                    width=width,
-                    enable_text=enable_text,
-                    pages_vertical_spacing=pages_vertical_spacing,
-                    resolution_boost=resolution_boost
+                    width=settings['width'],
+                    enable_text=settings['enable_text'],
+                    pages_vertical_spacing=settings['pages_vertical_spacing'],
+                    resolution_boost=settings['resolution_boost']
                 )
                 
             elif file_type in ['text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
-                # For non-PDF documents, get content from RAG_DOCUMENTS_TMP
                 content_query = f"""
                 SELECT CONTENT
-                FROM {SnowparkManager.RAG_TABLE}
+                FROM TESTDB.MYSCHEMA.RAG_DOCUMENTS_TMP
                 WHERE FILENAME = '{book['name'].replace("'", "''")}'
                 ORDER BY METADATA:chunk_number
                 """
@@ -638,19 +616,7 @@ class PDFLibraryApp:
                     st.warning("No content found for this document.")
                     return
                 
-                # Combine all chunks into a single text
                 full_content = '\n\n'.join([row['CONTENT'] for row in content_result])
-                
-                # Text document controls
-                with st.sidebar:
-                    font_size = st.slider(
-                        "Font Size",
-                        min_value=12,
-                        max_value=24,
-                        value=16
-                    )
-                
-                # Display the content using display_content_block
                 self.display_content_block(full_content)
                 
             else:

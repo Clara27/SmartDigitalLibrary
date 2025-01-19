@@ -249,7 +249,8 @@ class AdminPanel:
                                     success, error_msg, documents = SnowparkManager.process_pdf(
                                         item['file'].read(),
                                         item['file'].name,
-                                        item['file'].type
+                                        item['file'].type,
+                                        chunk_size=1000
                                     )
 
                                     if success and documents:

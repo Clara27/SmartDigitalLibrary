@@ -243,7 +243,8 @@ class AdminPanel:
                                 processing_complete = False
                                 status_placeholder = st.empty()
                                 status_placeholder.info(f"Processing {item['file'].name}...")
-                                
+                                file_content = item['file'].read() 
+                                item['file'].seek(0)
                                 try:
                                     item['status'] = 'processing'
                                     success, error_msg, documents = SnowparkManager.process_pdf(
@@ -252,14 +253,17 @@ class AdminPanel:
                                         item['file'].type,
                                         chunk_size=1000
                                     )
-
+                                    
+                                    
+                                   
                                     if success and documents:
                                         if SnowparkManager.upload_documents(
                                             session=session,
                                             documents=documents,
                                             filename=item['file'].name,
                                             file_type=item['file'].type,
-                                            api_key=st.session_state.mistral_api_key
+                                            api_key=st.session_state.mistral_api_key,
+                                            file_content=file_content 
                                         ):
                                             status_placeholder.success(f"✅ {item['file'].name} successfully added!")
                                             item['status'] = 'completed'

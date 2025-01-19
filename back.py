@@ -844,6 +844,7 @@ Please format the response with clear section headers and bullet points for read
         try:
             start_time = time.time()
             file_details = next((f for f in st.session_state.files if f['name'] == filename), None)
+            thumbnail = None
             
             if file_details:
                 print("🔍 File details found")
@@ -896,11 +897,13 @@ Please format the response with clear section headers and bullet points for read
                 file_size = f"{len(file_content) if file_content else 0 / 1024:.1f} KB"
 
                 # Thumbnail generation
+
                 if file_content:
+                    
                     try:
                         # Create a copy of file_content for thumbnail generation
                         file_content_copy = file_content[:]
-
+                 
                         # Generate thumbnail using the copy
                         from thumbnail_generator import ThumbnailGenerator
                         thumbnail = ThumbnailGenerator.generate_thumbnail(
@@ -908,7 +911,7 @@ Please format the response with clear section headers and bullet points for read
                             file_type=file_type,
                             filename=filename
                         )
-                        
+                       
                         # Store thumbnail status in session state
                         if 'thumbnails_status' not in st.session_state:
                             st.session_state.thumbnails_status = {}
@@ -930,9 +933,10 @@ Please format the response with clear section headers and bullet points for read
                             'error': str(e),
                             'timestamp': datetime.now().isoformat()
                         }
-                        thumbnail = None
+                       
 
                 # Construct SQL based on whether we have a thumbnail
+                print("🔍 Before calling book_metadata_sql")
                 if thumbnail:
                     book_metadata_sql = f"""
                     INSERT INTO TESTDB.MYSCHEMA.BOOK_METADATA (
@@ -951,7 +955,7 @@ Please format the response with clear section headers and bullet points for read
                         CURRENT_TIMESTAMP(),
                         '{file_size}',
                         TO_VARIANT(PARSE_JSON('{{ "queries": 0, "summaries": 0 }}')),
-                        '{thumbnail}'
+                        {f", '{thumbnail}'" if thumbnail else ''} 
                     """
                 else:
                     book_metadata_sql = f"""
@@ -971,9 +975,9 @@ Please format the response with clear section headers and bullet points for read
                         '{file_size}',
                         TO_VARIANT(PARSE_JSON('{{ "queries": 0, "summaries": 0 }}'))
                     """
-                
+                print("🔍 After calling book_metadata_sql")
                 session.sql(book_metadata_sql).collect()
-                
+                print("🔍 After calling book_metadata_sql collect")
                 # Process documents for RAG table
                 temp_table = f"TEMP_{uuid.uuid4().hex[:8]}"
                 create_temp_table_sql = f"""

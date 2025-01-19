@@ -1305,7 +1305,7 @@ Please format the response with clear section headers and bullet points for read
             }
             
             if filename:
-                search_params["filters"] = "FILENAME = '{}'".format(safe_filename)
+                #search_params["filters"] = "FILENAME = '{}'".format(safe_filename)
                 filters = "FILENAME = '{}'".format(safe_filename)
                 
             print(f"Debug - Executing search with query: {query}")

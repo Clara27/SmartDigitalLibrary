@@ -94,7 +94,7 @@ def render_traditional_view(files):
             <div style="
                 height: 20px;
                 background-color: #452B1F;
-                margin-bottom: -12px;
+                margin-bottom: 10px;
                 border-radius: 5px 5px 0 0;
             "></div>
         """, unsafe_allow_html=True)

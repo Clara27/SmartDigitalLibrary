@@ -134,17 +134,21 @@ def render_column_view(files):
         st.session_state.selected_book = book
         st.session_state.current_view = "details"
         st.rerun()
-        
+
     categories = ["Book", "PDF", "Research Paper", "Article", "Other"]
     
     cols = st.columns(len(categories))
+    
+    # Ensure all books have a valid category
+    for book in files:
+        if book["category"] not in categories:
+            st.write(f"Warning: Book '{book['name']}' has an undefined category: {book['category']}")
+            book["category"] = "Other"  # Default to "Other" category
+    
     for idx, (category, col) in enumerate(zip(categories, cols)):
         with col:
-            
             category_books = [book for book in files if book["category"] == category]
             category_color = get_category_color(category)
-            # st.write(f"Debug: Category: {category}")
-            # st.write(f"Debug: Number of books in category: {len(category_books)}")
             
             col.markdown(f"""
                 <div style="
@@ -166,7 +170,6 @@ def render_column_view(files):
                     
                 book_key = f"book_{book['name']}_{category}_{book_idx}"
                 
-                # Make the entire book spine clickable
                 if col.button(
                     truncate_text(book['name'], length=40),
                     key=book_key,
@@ -194,6 +197,7 @@ def render_column_view(files):
                     border-radius: 0 0 5px 5px;
                 "></div>
             """, unsafe_allow_html=True)
+
 
 # def render_hybrid_view(files):
 #     # Initialize session state if not already done
@@ -347,28 +351,104 @@ def truncate_filename(filename: str, max_length: int = 25) -> str:
 
 
 
+# def render_book_thumbnail(book: Dict, category_color: str, cat_idx: int, row_idx: int, col_idx: int):
+#     """Render an individual book thumbnail with library-style appearance."""
+#     thumbnail = get_thumbnail(book['name'])
+#     unique_key = f"book_{book['name']}_{category_color}_{cat_idx}_{row_idx}_{col_idx}"
+#     truncated_name = truncate_filename(book['name'])
+    
+#     # Define consistent dimensions for all displays
+#     img_width = "220px"
+#     img_height = "200px"
+    
+#     # Fallback image path (if no thumbnail is available)
+#     cover_icon = {
+#         "Book": "📚",
+#         "PDF": "📄",
+#         "Research Paper": "📋",
+#         "Article": "📰",
+#         "Other": "📎"
+#     }.get(book['category'], "📚")
+    
+#     cursor_style = {"cursor": "pointer"}  # This will add the hand (pointer) cursor on hover
+    
+#     # Ensure both the div and image are the same size
+#     container_style = {
+#         'width': img_width,
+#         'height': img_height,
+#         'display': 'flex',
+#         'justify-content': 'center',
+#         'align-items': 'center',
+#         'overflow': 'hidden',
+#         'background': 'transparent',
+#         'border': 'none',
+#         'box-shadow': 'none',
+#         'border-radius': '4px'
+#     }
+    
+#     img_style = {
+#         'width': '100%',
+#         'height': '100%',
+#         'object-fit': 'contain',  # Ensures the image fills the container properly without distortion
+#         **cursor_style,
+#         "margin": "0px"
+#     }
+    
+#     if thumbnail:
+#         # If thumbnail exists, use clickable_images for clickable thumbnail
+#         clicked = clickable_images(
+#             paths=[f"data:image/png;base64,{thumbnail}"], 
+#             titles=[book['name']],
+#             div_style=container_style,
+#             img_style=img_style,
+#             key=unique_key
+#         )
+#         if clicked != -1:
+#             st.session_state.selected_book = book
+#             st.session_state.current_view = "details"
+#             st.rerun()
+#     else:
+#         # If no thumbnail, fallback to category-based cover icon
+#         clicked = clickable_images(
+#             paths=[f"data:image/svg+xml;utf8,<svg width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><text x='50%' y='50%' font-size='80' text-anchor='middle' dy='.3em'>{cover_icon}</text></svg>"], 
+#             titles=[book['category']],
+#             div_style={**container_style, 'background': f'linear-gradient(145deg, {category_color}12, {category_color}34)'},
+#             img_style=img_style,
+#             key=unique_key
+#         )
+#         if clicked != -1:
+#             st.session_state.selected_book = book
+#             st.session_state.current_view = "details"
+#             st.rerun()
+    
+#     # Display the book title below the thumbnail
+#     st.markdown(f"""
+#         <div style="
+#             width: {img_width};
+#             text-align: center;
+#             margin-top: 8px;
+#             color: white;
+#             font-size: 12px;
+#             overflow: hidden;
+#             text-overflow: ellipsis;get
+#             white-space: nowrap;
+#             padding: 0 5px;
+#             title="{book['name']}"
+#         ">{truncated_name}</div>
+#     """, unsafe_allow_html=True)
 def render_book_thumbnail(book: Dict, category_color: str, cat_idx: int, row_idx: int, col_idx: int):
     """Render an individual book thumbnail with library-style appearance."""
-    thumbnail = get_thumbnail(book['name'])
-    unique_key = f"book_{book['name']}_{category_color}_{cat_idx}_{row_idx}_{col_idx}"
-    truncated_name = truncate_filename(book['name'])
+    base_key = f"book_{book['name']}_{category_color}_{cat_idx}_{row_idx}_{col_idx}"
+    image_key = f"{base_key}_img"
     
-    # Define consistent dimensions for all displays
-    img_width = "200px"
+    _, ext = os.path.splitext(book['name'].lower())
+    truncated_name = book['name']
+    
+    # Define consistent dimensions and styles
+    img_width = "150px"
     img_height = "200px"
     
-    # Fallback image path (if no thumbnail is available)
-    cover_icon = {
-        "Book": "📚",
-        "PDF": "📄",
-        "Research Paper": "📋",
-        "Article": "📰",
-        "Other": "📎"
-    }.get(book['category'], "📚")
-    
-    cursor_style = {"cursor": "pointer"}  # This will add the hand (pointer) cursor on hover
-    
-    # Ensure both the div and image are the same size
+    # Container style with category color background
     container_style = {
         'width': img_width,
         'height': img_height,
@@ -376,70 +456,145 @@ def render_book_thumbnail(book: Dict, category_color: str, cat_idx: int, row_idx
         'justify-content': 'center',
         'align-items': 'center',
         'overflow': 'hidden',
-        'background': 'transparent',
+        'background': category_color,
         'border': 'none',
         'box-shadow': 'none',
-        'border-radius': '4px'
+        'border-radius': '4px',
+        'margin-bottom': '2px'  # Reduced spacing between thumbnail and title
     }
     
     img_style = {
         'width': '100%',
         'height': '100%',
-        'object-fit': 'contain',  # Ensures the image fills the container properly without distortion
-        **cursor_style,
-        "margin": "0px"
+        'object-fit': 'contain',
+        'cursor': 'pointer',
+        'margin': '0px'
     }
+
+    # 1. Try PDF thumbnail first
+    if ext == '.pdf':
+        try:
+            thumbnail = get_thumbnail(book['name'])
+            if thumbnail and len(thumbnail) > 0:
+                clicked = clickable_images(
+                    paths=[f"data:image/png;base64,{thumbnail}"],
+                    titles=[f"{book['name']} ({book['category']})"],
+                    div_style=container_style,
+                    img_style=img_style,
+                    key=image_key
+                )
+                
+                if clicked != -1:
+                    st.session_state.selected_book = book
+                    st.session_state.current_view = "details"
+                    st.rerun()
+        except Exception as e:
+            print(f"Error rendering PDF thumbnail for {book['name']}: {str(e)}")
     
-    if thumbnail:
-        # If thumbnail exists, use clickable_images for clickable thumbnail
+    # 2. For documents and text files, show filename in thumbnail
+    elif ext in ['.doc', '.docx', '.txt']:
+        # Split filename into lines
+        name_without_ext = os.path.splitext(book['name'])[0]
+        words = name_without_ext.split()
+        lines = []
+        current_line = []
+        current_length = 0
+        
+        for word in words:
+            if current_length + len(word) + 1 <= 20:
+                current_line.append(word)
+                current_length += len(word) + 1
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+                current_length = len(word)
+        
+        if current_line:
+            lines.append(' '.join(current_line))
+        
+        lines = lines[:3]
+        if len(name_without_ext) > sum(len(line) for line in lines):
+            lines[-1] = lines[-1].rstrip() + '...'
+        
+        text_blocks = ''.join([
+            f"<tspan x='50%' dy='{20 if i > 0 else 0}'>{line}</tspan>"
+            for i, line in enumerate(lines)
+        ])
+        
+        text_thumbnail = f"""
+        <svg width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'>
+            <rect width='100%' height='100%' fill='#FFFFFF'/>
+            <text x='50%' y='30%' font-size='24' text-anchor='middle' fill='{category_color}'>
+                {ext[1:].upper()}
+            </text>
+            <text x='50%' y='50%' font-size='16' text-anchor='middle' fill='{category_color}'>
+                {text_blocks}
+            </text>
+        </svg>
+        """
+        
+        text_thumbnail = text_thumbnail.replace('\n', ' ').replace('    ', '')
+        text_thumbnail = text_thumbnail.replace('"', "'")
+        text_thumbnail = text_thumbnail.replace('#', '%23')
+        
         clicked = clickable_images(
-            paths=[f"data:image/png;base64,{thumbnail}"], 
-            titles=[book['name']],
+            paths=[f"data:image/svg+xml;utf8,{text_thumbnail}"],
+            titles=[f"{book['name']} ({book['category']})"],
             div_style=container_style,
             img_style=img_style,
-            key=unique_key
+            key=image_key
         )
-        if clicked != -1:
-            st.session_state.selected_book = book
-            st.session_state.current_view = "details"
-            st.rerun()
-    else:
-        # If no thumbnail, fallback to category-based cover icon
-        clicked = clickable_images(
-            paths=[f"data:image/svg+xml;utf8,<svg width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><text x='50%' y='50%' font-size='80' text-anchor='middle' dy='.3em'>{cover_icon}</text></svg>"], 
-            titles=[book['category']],
-            div_style={**container_style, 'background': f'linear-gradient(145deg, {category_color}12, {category_color}34)'},
-            img_style=img_style,
-            key=unique_key
-        )
+        
         if clicked != -1:
             st.session_state.selected_book = book
             st.session_state.current_view = "details"
             st.rerun()
     
-    # Display the book title below the thumbnail
+    # 3. Fallback to icons for other types
+    else:
+        cover_icon = {
+            "Book": "📚",
+            "PDF": "📄",
+            "Research Paper": "📋",
+            "Article": "📰",
+            "Other": "📎"
+        }.get(book['category'], "📚")
+        
+        clicked = clickable_images(
+            paths=[f"data:image/svg+xml;utf8,<svg width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><text x='50%' y='50%' font-size='80' text-anchor='middle' dy='.3em'>{cover_icon}</text></svg>"],
+            titles=[f"{book['name']} ({book['category']})"],
+            div_style=container_style,
+            img_style=img_style,
+            key=image_key
+        )
+        
+        if clicked != -1:
+            st.session_state.selected_book = book
+            st.session_state.current_view = "details"
+            st.rerun()
+    
+    # Add filename below thumbnail with reduced spacing
     st.markdown(f"""
         <div style="
             width: {img_width};
             text-align: center;
-            margin-top: 8px;
             color: white;
             font-size: 12px;
-            overflow: hidden;
-            text-overflow: ellipsis;get
-            white-space: nowrap;
-            padding: 0 5px;
-            title="{book['name']}"
+            word-wrap: break-word;
+            padding: 2px;
+            line-height: 1.2;
+            max-height: 45px;
+            overflow-y: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            margin-top: 0px;
         ">{truncated_name}</div>
     """, unsafe_allow_html=True)
 
-
-
-
-
-
 def render_hybrid_view(files: List[Dict]):
-    """Enhanced hybrid view with realistic library-style display."""
+    """Enhanced hybrid view with column colors."""
     # Initialize session state
     if 'selected_book' not in st.session_state:
         st.session_state.selected_book = None
@@ -464,42 +619,46 @@ def render_hybrid_view(files: List[Dict]):
             ]
         }
 
+    COLS_PER_ROW = 8  # Number of columns per row
+
     # Display books by category
     for cat_idx, (category, books) in enumerate(category_books.items()):
         if books:
             category_color = get_category_color(category)
             
-            # Category header with shelf styling
+            # Category header with reduced margin
             st.markdown(f"""
                 <div style="
-                    position: relative;
-                    margin: 30px 0 15px 0;
+                    background-color: {category_color};
+                    color: white;
+                    padding: 8px 15px;
+                    border-radius: 5px;
+                    margin: 10px 0 10px 0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 ">
-                    <div style="
-                        background-color: {category_color};
-                        color: white;
-                        padding: 10px 15px;
-                        border-radius: 5px 5px 0 0;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    ">
-                        <span style="font-weight: bold;">{category}</span>
-                        <span style="font-size: 0.9em;">({len(books)} items)</span>
-                    </div>
-                    <div style="
-                        height: 15px;
-                        background: linear-gradient(180deg, #2c1810 0%, #452B1F 100%);
-                        border-radius: 0 0 5px 5px;
-                    "></div>
+                    <span style="font-weight: bold;">{category}</span>
+                    <span style="font-size: 0.9em;">({len(books)} items)</span>
                 </div>
             """, unsafe_allow_html=True)
+
+            # Add subtle column dividers with category color
+            st.markdown(f"""
+                <style>
+                    [data-testid="column"] {{
+                        background-color: {category_color}05;
+                        border-radius: 5px;
+                        padding: 5px;
+                        margin: 0 2px;
+                    }}
+                </style>
+            """, unsafe_allow_html=True)
             
-            # Display books in a 5-column grid
-            cols_per_row = 5
-            for row_idx in range(0, len(books), cols_per_row):
-                cols = st.columns(cols_per_row)
+            # Display books in a grid
+            for row_idx in range(0, len(books), COLS_PER_ROW):
+                cols = st.columns(COLS_PER_ROW)
                 for col_idx, col in enumerate(cols):
                     if row_idx + col_idx < len(books):
                         with col:
@@ -511,15 +670,15 @@ def render_hybrid_view(files: List[Dict]):
                                 col_idx
                             )
             
-            # Add wooden shelf at the bottom
-            st.markdown(f"""
-                <div style="
-                    height: 20px;
-                    background: linear-gradient(180deg, #452B1F 0%, #2c1810 100%);
-                    border-radius: 5px;
-                    margin-bottom: 30px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                "></div>
+            # Remove column styling after this category
+            st.markdown("""
+                <style>
+                    [data-testid="column"] {
+                        background-color: transparent;
+                        padding: 5px;
+                        margin: 0 2px;
+                    }
+                </style>
             """, unsafe_allow_html=True)
 
 def get_category_color(category: str) -> str:

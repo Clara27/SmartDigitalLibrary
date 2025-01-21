@@ -446,7 +446,7 @@ class TruLensEvaluator:
             print(f"Feedback type: {type(self.all_feedbacks[0]).__name__}")
             
           
-               
+            self.rag = RAGPipeline()  
             print ("before self.tru_rag")
             # Initialize your TruCustomApp with the configuration
             self.tru_rag = TruCustomApp(

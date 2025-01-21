@@ -479,7 +479,7 @@ class TruLensEvaluator:
             network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
             dashboard_url = network_url.group(1) if network_url else None
             st.session_state.dashboard_url = dashboard_url
-            print(f"Extracted URL: {dashboard_url}")
+            st.write(f"Extracted URL: {dashboard_url}")
             
             return {
                 'response': resp
@@ -541,7 +541,7 @@ class TruLensEvaluator:
             network_url = re.search(r'Network URL: (http://[\d\.:]+)', output)
             dashboard_url = network_url.group(1) if network_url else None
             st.session_state.dashboard_url = dashboard_url
-            print(f"Extracted URL: {dashboard_url}")
+            st.write(f"Extracted URL: {dashboard_url}")
             
             return {
                 'response': resp
